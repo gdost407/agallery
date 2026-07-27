@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg">                
     <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="{{ route('home') }}">
-            <img src="{{ asset('AGallery-Logo.png') }}" class="navbar-brand-image img-fluid" alt="AGallery Golf Club">
+            <img src="{{ asset('assets/AGallery-Logo.png') }}" class="navbar-brand-image img-fluid" alt="AGallery Golf Club">
             <!-- <span class="navbar-brand-text">
                 AGallery
                 <small>Golf Club</small>

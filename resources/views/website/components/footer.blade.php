@@ -4,7 +4,7 @@
 
             <div class="col-lg-6 col-12 me-auto mb-5 mb-lg-0">
                 <a class="navbar-brand d-flex align-items-center" href="{{ route('home') }}">
-                    <img src="{{ asset('AGallery-Logo-Golden.png') }}" class="navbar-brand-image img-fluid" alt="">
+                    <img src="{{ asset('assets/AGallery-Logo-Golden.png') }}" class="navbar-brand-image img-fluid" alt="">
                     <!-- <span class="navbar-brand-text">
                         AGallery
                         <small>Golf Club</small>
