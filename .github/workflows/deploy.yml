@@ -19,7 +19,7 @@ jobs:
           server: ${{ secrets.HOST_FTP_SERVER }}
           username: ${{ secrets.HOST_FTP_USERNAME }}
           password: ${{ secrets.HOST_FTP_PASSWORD }}
-          server-dir: /domains/aniketgolhar.in/public_html/AGallery/
+          server-dir: /domains/aniketgolhar.in/public_html/SalesCRM/
 
       - name: Run Laravel Commands
         uses: appleboy/ssh-action@v1.2.2
@@ -29,7 +29,7 @@ jobs:
           password: ${{ secrets.HOST_SSH_PASSWORD }}
           port: ${{ secrets.HOST_SSH_PORT }}
           script: |
-            cd domains/aniketgolhar.in/public_html/AGallery
+            cd domains/aniketgolhar.in/public_html/SalesCRM
             composer install --no-dev --prefer-dist --optimize-autoloader
             php artisan down --render="errors::503" || true
             php artisan migrate --force
