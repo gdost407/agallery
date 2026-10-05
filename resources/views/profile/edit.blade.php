@@ -1,33 +1,12 @@
 @extends('app.layouts.layouts')
 
+@section('title', 'Settings & profile')
+
 @section('content')
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Profile') }}
-        </h2>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-profile-information-form')
-                </div>
-            </div>
-
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-password-form')
-                </div>
-            </div>
-
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
-                </div>
-            </div>
-        </div>
+    <div class="page-heading"><div><p class="eyebrow">YOUR ACCOUNT</p><h1>Settings &amp; profile</h1><p class="page-description">Keep your details up to date and your account secure.</p></div><a class="btn btn-light border" href="{{ route('app.dashboard') }}"><i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Back to library</a></div>
+    <div class="profile-sections">
+        <div class="settings-card">@include('profile.partials.update-profile-information-form')</div>
+        <div class="settings-card">@include('profile.partials.update-password-form')</div>
+        <div class="settings-card">@include('profile.partials.delete-user-form')</div>
     </div>
-</x-app-layout>
 @endsection

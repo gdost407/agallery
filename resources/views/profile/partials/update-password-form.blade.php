@@ -1,48 +1,14 @@
-<section>
-    <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Update Password') }}
-        </h2>
-
-        <p class="mt-1 text-sm text-gray-600">
-            {{ __('Ensure your account is using a long, random password to stay secure.') }}
-        </p>
-    </header>
-
-    <form method="post" action="{{ route('password.update') }}" class="mt-6 space-y-6">
+<section aria-labelledby="passwordTitle">
+    <h2 id="passwordTitle">Update password</h2>
+    <p class="settings-description">Use a strong, unique password to protect your account.</p>
+    <form method="POST" action="{{ route('password.update') }}" class="settings-form">
         @csrf
-        @method('put')
-
-        <div>
-            <x-input-label for="update_password_current_password" :value="__('Current Password')" />
-            <x-text-input id="update_password_current_password" name="current_password" type="password" class="mt-1 block w-full" autocomplete="current-password" />
-            <x-input-error :messages="$errors->updatePassword->get('current_password')" class="mt-2" />
-        </div>
-
-        <div>
-            <x-input-label for="update_password_password" :value="__('New Password')" />
-            <x-text-input id="update_password_password" name="password" type="password" class="mt-1 block w-full" autocomplete="new-password" />
-            <x-input-error :messages="$errors->updatePassword->get('password')" class="mt-2" />
-        </div>
-
-        <div>
-            <x-input-label for="update_password_password_confirmation" :value="__('Confirm Password')" />
-            <x-text-input id="update_password_password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" autocomplete="new-password" />
-            <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-2" />
-        </div>
-
-        <div class="flex items-center gap-4">
-            <x-primary-button>{{ __('Save') }}</x-primary-button>
-
-            @if (session('status') === 'password-updated')
-                <p
-                    x-data="{ show: true }"
-                    x-show="show"
-                    x-transition
-                    x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-gray-600"
-                >{{ __('Saved.') }}</p>
-            @endif
-        </div>
+        @method('PUT')
+        @foreach (['current_password' => ['Current password', 'current-password'], 'password' => ['New password', 'new-password'], 'password_confirmation' => ['Confirm new password', 'new-password']] as $field => [$label, $autocomplete])
+            <div class="mb-3"><label class="form-label" for="update_password_{{ $field }}">{{ $label }}</label><input class="form-control {{ $errors->updatePassword->has($field) ? 'is-invalid' : '' }}" id="update_password_{{ $field }}" name="{{ $field }}" type="password" required autocomplete="{{ $autocomplete }}" @if($errors->updatePassword->has($field)) aria-invalid="true" aria-describedby="password_{{ $field }}Error" @endif>
+                @foreach($errors->updatePassword->get($field) as $message)<div class="invalid-feedback" id="password_{{ $field }}Error">{{ $message }}</div>@endforeach
+            </div>
+        @endforeach
+        <div class="d-flex align-items-center gap-3"><button type="submit" class="btn btn-primary">Update password</button>@if(session('status') === 'password-updated')<span class="text-success small" role="status">Password updated</span>@endif</div>
     </form>
 </section>

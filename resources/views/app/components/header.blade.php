@@ -1,57 +1,22 @@
-<header class="app-header">
-  <nav class="navbar navbar-expand-lg navbar-light">
-    <ul class="navbar-nav">
-      <li class="nav-item d-block d-xl-none">
-        <a class="nav-link sidebartoggler nav-icon-hover" id="headerCollapse" href="javascript:void(0)">
-          <i class="ti ti-menu-2"></i>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link nav-icon-hover" href="javascript:void(0)">
-          <i class="ti ti-bell-ringing"></i>
-          <div class="notification bg-primary rounded-circle"></div>
-        </a>
-      </li>
-    </ul>
-    <div class="navbar-collapse justify-content-end px-0" id="navbarNav">
-      <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-end">
-        <!-- <a href="#" target="_blank"
-          class="btn btn-primary me-2"><span class="d-none d-md-block">Check Pro Version</span> <span class="d-block d-md-none">Pro</span></a>
-        <a href="#" target="_blank"
-          class="btn btn-success"><span class="d-none d-md-block">Download Free </span> <span class="d-block d-md-none">Free</span></a> -->
-        <li class="nav-item dropdown">
-          <a class="nav-link nav-icon-hover" href="javascript:void(0)" id="drop2" data-bs-toggle="dropdown"
-            aria-expanded="false">
-            <img src="{{ asset('assets/app/images/profile/user-1.jpg')}}" alt="" width="35" height="35" class="rounded-circle">
-          </a>
-          <div class="dropdown-menu dropdown-menu-end dropdown-menu-animate-up" aria-labelledby="drop2">
-            <div class="message-body">
-              <a href="{{ route('profile.edit') }}" class="d-flex align-items-center gap-2 dropdown-item">
-                <i class="ti ti-user fs-6"></i>
-                <p class="mb-0 fs-3">My Profile</p>
-              </a>
-              <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
-                <i class="ti ti-mail fs-6"></i>
-                <p class="mb-0 fs-3">My Account</p>
-              </a>
-              <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
-                <i class="ti ti-list-check fs-6"></i>
-                <p class="mb-0 fs-3">My Task</p>
-              </a>
-              <form method="POST" action="{{ route('logout') }}">
-                  @csrf
-
-                  <x-dropdown-link :href="route('logout')"
-                          onclick="event.preventDefault();
-                                      this.closest('form').submit();">
-                      {{ __('Log Out') }}
-                  </x-dropdown-link>
-              </form>
-              <!-- <a href="logout" class="btn btn-outline-primary mx-3 mt-2 d-block">Logout</a> -->
-            </div>
-          </div>
-        </li>
-      </ul>
+<header class="gallery-header">
+    <button class="icon-button d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#libraryNavigation" aria-controls="libraryNavigation" aria-label="Open navigation"><i class="bi bi-list" aria-hidden="true"></i></button>
+    <div class="search-box">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <label class="visually-hidden" for="librarySearch">Search files on this page</label>
+        <input id="librarySearch" type="search" placeholder="{{ request()->routeIs('profile.edit') ? 'Search is available in your library' : 'Search your files, photos and more' }}" autocomplete="off" @disabled(request()->routeIs('profile.edit'))>
+        <span class="search-hint d-none d-md-inline">Search library</span>
     </div>
-  </nav>
+    <div class="dropdown">
+        <button class="account-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open account menu">
+            <span class="avatar">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
+            <span class="d-none d-xl-block text-start"><strong>{{ auth()->user()->name }}</strong><small>Personal account</small></span>
+            <i class="bi bi-chevron-down d-none d-sm-block" aria-hidden="true"></i>
+        </button>
+        <div class="dropdown-menu dropdown-menu-end account-menu">
+            <div class="px-3 py-2"><strong class="d-block">{{ auth()->user()->name }}</strong><small class="text-secondary">{{ auth()->user()->email }}</small></div>
+            <hr class="dropdown-divider">
+            <a class="dropdown-item" href="{{ route('profile.edit') }}"><i class="bi bi-person me-2" aria-hidden="true"></i>Manage profile</a>
+            <form method="POST" action="{{ route('logout') }}">@csrf<button class="dropdown-item text-danger" type="submit"><i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Sign out</button></form>
+        </div>
+    </div>
 </header>
