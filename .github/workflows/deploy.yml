@@ -39,5 +39,5 @@ jobs:
             php artisan view:cache
             php artisan storage:link || true
             php artisan up
-            # rm -rf build
-            # cp -r public/build .
+            rm -rf build
+            cp -r public/build .
