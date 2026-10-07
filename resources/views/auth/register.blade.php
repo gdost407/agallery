@@ -1,4 +1,9 @@
 <x-guest-layout>
+    <div class="auth-heading">
+        <span class="auth-eyebrow">MAKE ROOM FOR WHAT MATTERS</span>
+        <h1>Create your account.</h1>
+        <p>Your personal digital library starts here.</p>
+    </div>
     <form method="POST" action="{{ route('register') }}">
         @csrf
 
@@ -39,14 +44,11 @@
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
-                {{ __('Already registered?') }}
-            </a>
-
-            <x-primary-button class="ms-4">
-                {{ __('Register') }}
+        <div class="auth-actions">
+            <x-primary-button class="auth-submit">
+                {{ __('Create account') }}
             </x-primary-button>
         </div>
     </form>
+    <p class="auth-switch">Already have an account? <a href="{{ route('login') }}">Log in &rarr;</a></p>
 </x-guest-layout>

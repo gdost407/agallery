@@ -1,4 +1,9 @@
 <x-guest-layout>
+    <div class="auth-heading">
+        <span class="auth-eyebrow">YOUR LIBRARY IS WAITING</span>
+        <h1>Welcome back.</h1>
+        <p>Log in to return to your AGallery workspace.</p>
+    </div>
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
@@ -32,16 +37,17 @@
             </label>
         </div>
 
-        <div class="flex items-center justify-end mt-4">
+        <div class="auth-actions">
             @if (Route::has('password.request'))
                 <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
                     {{ __('Forgot your password?') }}
                 </a>
             @endif
 
-            <x-primary-button class="ms-3">
+            <x-primary-button class="auth-submit">
                 {{ __('Log in') }}
             </x-primary-button>
         </div>
     </form>
+    <p class="auth-switch">New to AGallery? <a href="{{ route('register') }}">Create an account &rarr;</a></p>
 </x-guest-layout>
