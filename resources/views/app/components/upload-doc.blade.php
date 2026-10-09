@@ -1,7 +1,7 @@
 <div class="offcanvas offcanvas-end upload-panel" tabindex="-1" id="offcanvasUploadDoc" aria-labelledby="offcanvasUploadDocLabel">
     <div class="offcanvas-header border-bottom"><h2 class="offcanvas-title fs-5" id="offcanvasUploadDocLabel">Add to your library</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>
     <div class="offcanvas-body">
-        <p class="text-secondary">Upload to {{ isset($currentFolder) ? $currentFolder->name : 'My library' }}.</p>
+        <p class="text-secondary">@if(isset($currentFolder))Upload to {{ $currentFolder->name }}.@elsePhotos go to Image, videos to Video, and other files to Document. Open a custom folder to upload there.@endif</p>
         @php
             $uploadRoute = request()->routeIs('app.photos') ? 'app.photos.store' : (request()->routeIs('app.videos') ? 'app.videos.store' : (request()->routeIs('app.documents') ? 'app.documents.store' : 'app.files.store'));
         @endphp

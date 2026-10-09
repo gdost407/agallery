@@ -71,7 +71,12 @@ class StorageManager
                     throw ValidationException::withMessages(['files' => 'Not enough storage. Choose smaller files or buy more storage.']);
                 }
                 foreach ($uploads as $upload) {
-                    $key = 'library/'.$account->id.'/'.Str::uuid();
+                    $mime = $upload->getMimeType() ?? 'application/octet-stream';
+                    $extension = mb_strtolower($upload->getClientOriginalExtension());
+                    $category = $this->category($mime, $extension);
+                    $destination = app(LibraryFolders::class)->destination($account, $category, $folder);
+                    $storedName = LibraryFolders::storedName($account->id, $category, $extension);
+                    $key = 'library/'.$account->id.'/'.$destination->uuid.'/'.$storedName;
                     $paths[] = $key;
                     $stream = fopen($upload->getRealPath(), 'rb');
                     try {
@@ -84,10 +89,9 @@ class StorageManager
                     if (! $stored) {
                         throw new RuntimeException('The upload could not be saved.');
                     }
-                    $mime = $upload->getMimeType() ?? 'application/octet-stream';
-                    $extension = mb_strtolower($upload->getClientOriginalExtension());
                     $file = $account->files()->create([
-                        'folder_id' => $folder?->id,
+                        'folder_id' => $destination->id,
+                        'stored_name' => $storedName,
                         'original_name' => basename(str_replace('\\', '/', $upload->getClientOriginalName())),
                         'extension' => $extension,
                         'mime_type' => $mime,
@@ -113,9 +117,11 @@ class StorageManager
 
     public function copy(File $source, User $user, ?Folder $folder): File
     {
-        $key = 'library/'.$user->id.'/'.Str::uuid();
+        $folder = app(LibraryFolders::class)->destination($user, $source->category, $folder);
+        $storedName = LibraryFolders::storedName($user->id, $source->category, $source->extension);
+        $key = 'library/'.$user->id.'/'.$folder->uuid.'/'.$storedName;
         try {
-            return DB::transaction(function () use ($source, $user, $folder, $key): File {
+            return DB::transaction(function () use ($source, $user, $folder, $key, $storedName): File {
                 $account = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
                 $used = $this->used($account);
                 if ($source->size_bytes > max(0, $this->capacity($account) - $used - $account->reserved_storage_bytes)) {
@@ -128,6 +134,7 @@ class StorageManager
                 $copy = $source->replicate(['uuid', 'starred_at', 'deleted_at']);
                 $copy->folder_id = $folder?->id;
                 $copy->storage_key = $key;
+                $copy->stored_name = $storedName;
                 $copy->save();
                 $account->storageUsageEvents()->create([
                     'file_id' => $copy->id, 'operation' => 'upload',

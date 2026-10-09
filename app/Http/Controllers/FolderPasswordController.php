@@ -13,6 +13,7 @@ class FolderPasswordController extends Controller
     public function update(ResourcePasswordRequest $request, Folder $folder, LibraryAccess $access): RedirectResponse
     {
         $access->authorizeOwner($folder, $request->user());
+        abort_if($folder->system_key !== null, 422, 'Create a custom folder for password protection.');
         $locked = $access->firstLocked($folder, $request);
         if ($locked !== null) {
             abort_unless($locked->is($folder), 423, 'Unlock the parent folder first.');

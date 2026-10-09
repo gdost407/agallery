@@ -2,7 +2,7 @@
 
 @php
     $headings = ['home' => 'My library', 'folders' => 'Folders', 'private' => 'Private folders', 'photos' => 'Photos', 'videos' => 'Videos', 'documents' => 'Documents', 'starred' => 'Starred', 'recent' => 'Recent', 'shared' => 'Shared with me', 'trash' => 'Trash'];
-    $filesHeading = $page === 'home' && ! $currentFolder ? 'Recent uploads' : ($page === 'folders' ? 'Files outside folders' : 'Your files');
+    $filesHeading = $page === 'home' && ! $currentFolder ? 'Recent uploads' : 'Your files';
     $heading = $currentFolder?->name ?? $headings[$page];
 @endphp
 
@@ -20,7 +20,9 @@
         <span class="text-secondary">{{ $currentFolder->password_hash ? 'Password protected' : 'No folder password' }}</span>
     </div>
     @if ($currentFolderUsage)<p class="folder-usage-summary"><i class="bi bi-folder" aria-hidden="true"></i><strong>{{ $currentFolderUsage['label'] }}</strong> · {{ $currentFolderUsage['count'] }} files including subfolders and Trash</p>@endif
+    @if (!$currentFolder->system_key)
     <x-resource-password :action="route('app.folders.password', $currentFolder->uuid)" :protected="$currentFolder->password_hash !== null" />
+    @endif
 @endif
 
 @if ($folders->isNotEmpty())
@@ -63,7 +65,7 @@
         </div>
         <div class="modal fade" id="selectedTransferModal" tabindex="-1" aria-labelledby="selectedTransferTitle" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
             <div class="modal-header"><h2 class="modal-title fs-5" id="selectedTransferTitle">Transfer selected files</h2><button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button></div>
-            <div class="modal-body"><label class="form-label" for="selectedDestination">Destination folder</label><select class="form-select" id="selectedDestination" name="folder_id" form="selectedFilesDelete"><option value="">My library</option>@foreach ($selectionFolders as $destination)<option value="{{ $destination->id }}">{{ $destination->name }}</option>@endforeach</select><p class="small text-secondary mt-3 mb-0">Protected folders must be unlocked first. Copying uses additional storage.</p></div>
+            <div class="modal-body"><label class="form-label" for="selectedDestination">Destination folder</label><select class="form-select" id="selectedDestination" name="folder_id" form="selectedFilesDelete"><option value="">Default folder (by file type)</option>@foreach ($selectionFolders as $destination)<option value="{{ $destination->id }}">{{ $destination->name }}</option>@endforeach</select><p class="small text-secondary mt-3 mb-0">Protected folders must be unlocked first. Copying uses additional storage.</p></div>
             <div class="modal-footer"><button type="submit" class="btn btn-primary" name="action" value="copy" form="selectedFilesDelete" data-confirm-transfer>Copy selected files</button></div>
         </div></div></div>
         <button class="btn btn-sm btn-outline-secondary mb-3" type="button" data-start-selection>Select files</button>

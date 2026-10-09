@@ -57,7 +57,8 @@ class SelectedFiles
                     if ($copying) {
                         $paths[] = $this->storage->copy($file, $user, $folder)->storage_key;
                     } else {
-                        $file->update(['folder_id' => $folder?->id]);
+                        $destination = app(LibraryFolders::class)->destination($user, $file->category, $folder);
+                        $file->update(['folder_id' => $destination->id]);
                     }
                 }
             });

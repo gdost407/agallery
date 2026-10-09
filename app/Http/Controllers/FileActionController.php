@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\LibraryAccess;
+use App\Http\LibraryFolders;
 use App\Http\Requests\BulkDeleteFilesRequest;
 use App\Http\Requests\TransferFileRequest;
 use App\Http\StorageManager;
@@ -54,7 +55,8 @@ class FileActionController extends Controller
                 if ($copying) {
                     return $this->storage->copy($source, $request->user(), $folder);
                 }
-                $source->update(['folder_id' => $folder?->id]);
+                $destination = app(LibraryFolders::class)->destination($request->user(), $source->category, $folder);
+                $source->update(['folder_id' => $destination->id]);
 
                 return $source;
             });

@@ -85,7 +85,7 @@ test('move changes only the folder and retains bytes storage key shares and coun
     expect($file->fresh()->folder_id)->toBe($folder->id)->and($file->fresh()->storage_key)->toBe($file->storage_key)
         ->and($user->fresh()->used_storage_bytes)->toBe(12)->and($link->fresh()->file_id)->toBe($file->id);
     $this->patch(route('app.files.move', $file->uuid), ['folder_id' => null])->assertRedirect();
-    expect($file->fresh()->folder_id)->toBeNull();
+    expect($file->fresh()->folder->system_key)->toBe('document');
     $this->assertDatabaseCount('files', 1);
     $this->assertDatabaseCount('storage_usage_events', 0);
 });

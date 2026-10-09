@@ -19,6 +19,7 @@ class Folder extends Model
     protected $fillable = [
         'parent_id',
         'name',
+        'system_key',
         'password_hash',
         'password_changed_at',
     ];

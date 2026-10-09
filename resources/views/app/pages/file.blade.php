@@ -41,13 +41,13 @@
                 <form method="POST" action="{{ route('app.files.copy', $file->uuid) }}" class="file-transfer-form">
                     @csrf
                     <label for="copyDestination" class="form-label">Copy to folder</label>
-                    <select id="copyDestination" name="folder_id" class="form-select"><option value="">My library</option>@foreach ($destinations as $destination)<option value="{{ $destination->id }}" @selected($destination->id === $file->folder_id)>{{ $destination->name }}</option>@endforeach</select>
+                    <select id="copyDestination" name="folder_id" class="form-select"><option value="">Default folder (by file type)</option>@foreach ($destinations as $destination)<option value="{{ $destination->id }}" @selected($destination->id === $file->folder_id)>{{ $destination->name }}</option>@endforeach</select>
                     <button class="btn btn-outline-primary" type="submit"><i class="bi bi-files me-1" aria-hidden="true"></i>Copy</button>
                 </form>
                 <form method="POST" action="{{ route('app.files.move', $file->uuid) }}" class="file-transfer-form">
                     @csrf @method('PATCH')
                     <label for="moveDestination" class="form-label">Move to folder</label>
-                    <select id="moveDestination" name="folder_id" class="form-select"><option value="">My library</option>@foreach ($destinations as $destination)<option value="{{ $destination->id }}" @selected($destination->id === $file->folder_id)>{{ $destination->name }}</option>@endforeach</select>
+                    <select id="moveDestination" name="folder_id" class="form-select"><option value="">Default folder (by file type)</option>@foreach ($destinations as $destination)<option value="{{ $destination->id }}" @selected($destination->id === $file->folder_id)>{{ $destination->name }}</option>@endforeach</select>
                     <button class="btn btn-outline-primary" type="submit"><i class="bi bi-folder-symlink me-1" aria-hidden="true"></i>Move</button>
                 </form>
                 <p class="small text-secondary mt-3">Copying uses additional storage. Protected destination folders must be unlocked first.</p>

@@ -39,7 +39,8 @@ test('folder menu shows correct recursive sizes and file counts without leaking 
     }
     File::factory()->for($user)->for($grandchild)->create(['size_bytes' => 5, 'deleted_at' => now()]);
     $this->actingAs($user)->get(route('app.folders'))->assertSuccessful()->assertSee('Root')->assertSee('72 B')
-        ->assertViewHas('folders', fn ($folders): bool => $folders->pluck('id')->all() === [$root->id]);
+        ->assertViewHas('folders', fn ($folders): bool => $folders->whereNull('system_key')->pluck('id')->all() === [$root->id]
+            && $folders->whereNotNull('system_key')->count() === 4);
     $response = $this->get(route('app.folders.show', $child->uuid))->assertSuccessful()->assertSee('Grandchild')->assertSee('62 B')->assertSee('35 B')->assertDontSee('Secret child');
     expect($response->viewData('currentFolderUsage')['bytes'])->toBe(62)
         ->and($response->viewData('currentFolderUsage')['count'])->toBe(4)

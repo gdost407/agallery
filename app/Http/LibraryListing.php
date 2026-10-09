@@ -16,6 +16,7 @@ class LibraryListing
     {
         $request->validate(['q' => ['nullable', 'string', 'max:255']]);
         $user = $request->user();
+        app(LibraryFolders::class)->ensure($user);
         $query = $user->files()->where('status', 'ready');
         if ($page === 'shared') {
             $query = File::where('status', 'ready')->whereHas('shareLinks', fn ($links) => $links
@@ -71,7 +72,7 @@ class LibraryListing
             ? $this->analytics->folderUsage($user, $folderTree) : []);
 
         $selectionFolders = ! in_array($page, ['shared', 'trash', 'private'], true)
-            ? $user->folders()->orderBy('name')->get()->filter(fn (Folder $item): bool => $this->access->firstLocked($item, $request) === null)
+            ? $user->folders()->where(fn ($folders) => $folders->whereNull('system_key')->orWhere('system_key', '!=', 'trash'))->orderBy('name')->get()->filter(fn (Folder $item): bool => $this->access->firstLocked($item, $request) === null)
             : collect();
 
         return view('app.pages.'.($folder !== null ? 'home' : $page), [

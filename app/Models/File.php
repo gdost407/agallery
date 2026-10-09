@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Http\LibraryFolders;
 use Database\Factories\FileFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,6 +20,7 @@ class File extends Model
     protected $fillable = [
         'folder_id',
         'original_name',
+        'stored_name',
         'extension',
         'mime_type',
         'category',
@@ -37,6 +39,7 @@ class File extends Model
         'disk',
         'storage_key',
         'password_hash',
+        'stored_name',
     ];
 
     /** @var array<string, mixed> */
@@ -56,6 +59,13 @@ class File extends Model
             'password_hash' => 'hashed',
             'password_changed_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (File $file): void {
+            $file->stored_name ??= LibraryFolders::storedName($file->user_id, $file->category, $file->extension);
+        });
     }
 
     /** @return list<string> */

@@ -16,6 +16,7 @@ class FolderController extends Controller
     {
         $parent = $request->validated('parent_id') !== null ? Folder::findOrFail($request->validated('parent_id')) : null;
         if ($parent !== null) {
+            abort_if($parent->system_key === 'trash', 422, 'Choose a folder outside Trash.');
             $access->authorizeOwner($parent, $request->user());
             $access->ensureUnlocked($parent, $request);
         }
@@ -28,9 +29,12 @@ class FolderController extends Controller
         return to_route('app.folders.show', $folder->uuid)->with('status', 'Folder created.');
     }
 
-    public function show(Request $request, Folder $folder, LibraryAccess $access, LibraryListing $listing): View
+    public function show(Request $request, Folder $folder, LibraryAccess $access, LibraryListing $listing): View|RedirectResponse
     {
         $access->authorizeOwner($folder, $request->user());
+        if ($folder->system_key === 'trash') {
+            return to_route('app.trash');
+        }
         $locked = $access->firstLocked($folder, $request);
         if ($locked !== null) {
             return view('app.pages.unlock', ['resource' => $locked, 'currentFolder' => null]);

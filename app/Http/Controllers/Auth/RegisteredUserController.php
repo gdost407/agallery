@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\LibraryFolders;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -43,6 +44,7 @@ class RegisteredUserController extends Controller
         ]);
 
         event(new Registered($user));
+        app(LibraryFolders::class)->ensure($user);
 
         Auth::login($user);
 

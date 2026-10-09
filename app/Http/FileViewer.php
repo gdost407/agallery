@@ -24,7 +24,7 @@ class FileViewer
         }
         $isMedia = in_array($file->mime_type, ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'video/mp4', 'video/webm']);
         $destinations = $file->user_id === $request->user()->id
-            ? $request->user()->folders()->orderBy('name')->get()->filter(fn (Folder $folder): bool => $this->access->firstLocked($folder, $request) === null)
+            ? $request->user()->folders()->where(fn ($folders) => $folders->whereNull('system_key')->orWhere('system_key', '!=', 'trash'))->orderBy('name')->get()->filter(fn (Folder $folder): bool => $this->access->firstLocked($folder, $request) === null)
             : collect();
 
         return [
