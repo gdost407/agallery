@@ -89,6 +89,6 @@ class LibraryAccess
 
     private function sessionKey(File|Folder $resource, Request $request): string
     {
-        return 'library_unlocks.'.$request->user()->id.'.'.$resource->getTable().'.'.$resource->id;
+        return 'library_unlocks.'.($request->user()?->id ?? 'guest').'.'.$resource->getTable().'.'.$resource->id;
     }
 }

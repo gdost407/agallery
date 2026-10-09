@@ -70,12 +70,17 @@ class LibraryListing
         $folderUsage = $analytics['folderUsage'] ?? (in_array($page, ['home', 'folders', 'private'], true)
             ? $this->analytics->folderUsage($user, $folderTree) : []);
 
+        $selectionFolders = ! in_array($page, ['shared', 'trash', 'private'], true)
+            ? $user->folders()->orderBy('name')->get()->filter(fn (Folder $item): bool => $this->access->firstLocked($item, $request) === null)
+            : collect();
+
         return view('app.pages.'.($folder !== null ? 'home' : $page), [
             'files' => $files, 'folders' => $folders, 'currentFolder' => $folder,
             'lockedFiles' => $lockedFiles,
             'lockedFolders' => $lockedFolders,
             'analytics' => $analytics, 'folderUsage' => $folderUsage,
             'currentFolderUsage' => $folder !== null ? ($folderUsage[$folder->id] ?? null) : null,
+            'selectionFolders' => $selectionFolders,
         ]);
     }
 

@@ -8,6 +8,8 @@ use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FolderPasswordController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\PhotoController;
+use App\Http\Controllers\SelectionController;
+use App\Http\Controllers\SharedFileController;
 use App\Http\Controllers\VideoController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +29,8 @@ Route::middleware(['auth', 'verified'])->prefix('app')->name('app.')->group(func
     Route::get('/folders', [LibraryController::class, 'folders'])->name('folders');
 
     Route::post('/files', [FileController::class, 'store'])->name('files.store');
+    Route::post('/files/selected', SelectionController::class)->name('files.selected');
+    Route::delete('/shares/{link}', [SharedFileController::class, 'revoke'])->name('shares.revoke');
     Route::delete('/files', [FileActionController::class, 'destroySelected'])->name('files.bulk-destroy');
     Route::get('/files/{file:uuid}', [FileController::class, 'show'])->name('files.show');
     Route::get('/files/{file:uuid}/content', [FileController::class, 'content'])->name('files.content');

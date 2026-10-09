@@ -6,7 +6,7 @@
         <x-pwa-head />
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ request()->routeIs('register') ? 'Sign up' : 'Welcome back' }} | AGallery</title>
+        <title>{{ request()->routeIs('share.*') ? 'Shared file' : (request()->routeIs('register') ? 'Sign up' : 'Welcome back') }} | AGallery</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">

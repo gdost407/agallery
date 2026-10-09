@@ -1,4 +1,4 @@
-@props(['page' => 'home', 'files', 'folders', 'currentFolder' => null, 'lockedFiles' => [], 'lockedFolders' => [], 'folderUsage' => [], 'currentFolderUsage' => null])
+@props(['page' => 'home', 'files', 'folders', 'currentFolder' => null, 'lockedFiles' => [], 'lockedFolders' => [], 'folderUsage' => [], 'currentFolderUsage' => null, 'selectionFolders' => []])
 
 @php
     $headings = ['home' => 'My library', 'folders' => 'Folders', 'private' => 'Private folders', 'photos' => 'Photos', 'videos' => 'Videos', 'documents' => 'Documents', 'starred' => 'Starred', 'recent' => 'Recent', 'shared' => 'Shared with me', 'trash' => 'Trash'];
@@ -51,9 +51,21 @@
     @if ($page !== 'trash' && $page !== 'shared')
         <div class="selection-toolbar mb-3" data-selection-toolbar hidden>
             <span data-selection-count role="status" aria-live="polite">0 selected</span>
-            <form id="selectedFilesDelete" method="POST" action="{{ route('app.files.bulk-destroy') }}">@csrf @method('DELETE')<button class="btn btn-danger btn-sm" type="submit" data-delete-selected disabled><i class="bi bi-trash me-1" aria-hidden="true"></i>Delete selected</button></form>
+            <form id="selectedFilesDelete" method="POST" action="{{ route('app.files.selected') }}" class="selection-actions">
+                @csrf
+                <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete" data-delete-selected data-selection-action disabled><i class="bi bi-trash me-1" aria-hidden="true"></i>Delete selected</button>
+                <button class="btn btn-outline-primary btn-sm" type="button" data-selection-action data-selection-transfer="copy" data-bs-toggle="modal" data-bs-target="#selectedTransferModal" disabled>Copy</button>
+                <button class="btn btn-outline-primary btn-sm" type="button" data-selection-action data-selection-transfer="move" data-bs-toggle="modal" data-bs-target="#selectedTransferModal" disabled>Move</button>
+                <button class="btn btn-outline-primary btn-sm" type="submit" name="action" value="share" data-selection-action disabled>Share</button>
+                <button class="btn btn-outline-primary btn-sm" type="submit" name="action" value="download" data-selection-action disabled>Download</button>
+            </form>
             <button class="btn btn-outline-secondary btn-sm" type="button" data-cancel-selection>Cancel</button>
         </div>
+        <div class="modal fade" id="selectedTransferModal" tabindex="-1" aria-labelledby="selectedTransferTitle" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+            <div class="modal-header"><h2 class="modal-title fs-5" id="selectedTransferTitle">Transfer selected files</h2><button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body"><label class="form-label" for="selectedDestination">Destination folder</label><select class="form-select" id="selectedDestination" name="folder_id" form="selectedFilesDelete"><option value="">My library</option>@foreach ($selectionFolders as $destination)<option value="{{ $destination->id }}">{{ $destination->name }}</option>@endforeach</select><p class="small text-secondary mt-3 mb-0">Protected folders must be unlocked first. Copying uses additional storage.</p></div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary" name="action" value="copy" form="selectedFilesDelete" data-confirm-transfer>Copy selected files</button></div>
+        </div></div></div>
         <button class="btn btn-sm btn-outline-secondary mb-3" type="button" data-start-selection>Select files</button>
     @endif
     <div class="section-heading file-section-heading"><div class="d-flex align-items-center gap-2"><h2 id="filesTitle">{{ $filesHeading }}</h2><span class="count-badge" id="fileCount" aria-live="polite">{{ $files->count() }}</span></div><span>{{ $files->total() }} files</span></div>

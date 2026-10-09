@@ -8,6 +8,14 @@
         const boxes = Array.from(library.querySelectorAll('[data-file-select]'));
         const count = toolbar.querySelector('[data-selection-count]');
         const remove = toolbar.querySelector('[data-delete-selected]');
+        const actions = Array.from(toolbar.querySelectorAll('[data-selection-action]'));
+        document.querySelectorAll('[data-selection-transfer]').forEach(button => button.addEventListener('click', () => {
+            const copying = button.dataset.selectionTransfer === 'copy';
+            const confirm = document.querySelector('[data-confirm-transfer]');
+            confirm.value = copying ? 'copy' : 'move';
+            confirm.textContent = copying ? 'Copy selected files' : 'Move selected files';
+            document.getElementById('selectedTransferTitle').textContent = confirm.textContent;
+        }));
         let selecting = false;
         let hold = null;
         let suppressedCard = null;
@@ -15,6 +23,7 @@
             const total = boxes.filter(box => box.checked).length;
             count.textContent = total + ' selected';
             remove.disabled = total === 0;
+            actions.forEach(button => { button.disabled = total === 0; });
             toolbar.hidden = !selecting;
             library.classList.toggle('selection-mode', selecting);
             cards.forEach(card => card.classList.toggle('file-selected', Boolean(card.querySelector('[data-file-select]')?.checked)));

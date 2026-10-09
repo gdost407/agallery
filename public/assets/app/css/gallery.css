@@ -98,3 +98,6 @@ a{text-decoration:none}button,input,select{font:inherit}button,a,input,select{to
 .analytics-folder-table { font-size: 12px; }.analytics-folder-table td:first-child { overflow-wrap: anywhere; max-width: 220px; }
 .folder-usage-summary { background: #edf3fa; border-radius: 10px; padding: 12px 16px; font-size: 12px; }.folder-usage-summary i { margin-right: 8px; }
 @media (max-width: 767.98px) { .analytics-overview, .analytics-tables { grid-template-columns: 1fr; }.analytics-chart-card { flex-direction: row; padding: 16px; }.analytics-donut { width: 140px; height: 140px; flex-shrink: 0; }.analytics-donut > div { width: 104px; height: 104px; }.analytics-donut strong { font-size: 18px; }.analytics-metric { padding: 12px; gap: 10px; }.analytics-metric strong { font-size: 17px; }.analytics-type-icon { font-size: 20px; }.analytics-panel { padding: 16px; } }
+.selection-toolbar { flex-wrap: wrap; }
+.selection-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 575.98px) { .selection-toolbar form { width: 100%; margin-left: 0; }.selection-actions .btn { flex: 1 0 auto; } }

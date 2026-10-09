@@ -27,6 +27,13 @@ function selectionHarness() {
     const remove = element();
     const cancel = element();
     const start = element();
+    const actions = [remove, element(), element(), element(), element()];
+    const copy = actions[1];
+    const move = actions[2];
+    copy.dataset.selectionTransfer = 'copy';
+    move.dataset.selectionTransfer = 'move';
+    const confirm = element();
+    const title = element();
     const boxes = [element(), element()];
     const cards = boxes.map(box => {
         const card = element();
@@ -35,8 +42,11 @@ function selectionHarness() {
     });
     library.querySelectorAll = selector => selector === '[data-file]' ? cards : boxes;
     toolbar.querySelector = selector => ({ '[data-selection-count]': count, '[data-delete-selected]': remove, '[data-cancel-selection]': cancel }[selector]);
+    toolbar.querySelectorAll = () => actions;
     const document = element();
-    document.querySelector = selector => ({ '[data-library]': library, '[data-selection-toolbar]': toolbar, '[data-start-selection]': start }[selector] || null);
+    document.querySelector = selector => ({ '[data-library]': library, '[data-selection-toolbar]': toolbar, '[data-start-selection]': start, '[data-confirm-transfer]': confirm }[selector] || null);
+    document.querySelectorAll = selector => selector === '[data-selection-transfer]' ? [copy, move] : [];
+    document.getElementById = () => title;
     vm.runInNewContext(source, {
         document,
         setTimeout(callback) { const id = ++timerId; timers.set(id, callback); return id; },
@@ -48,10 +58,25 @@ function selectionHarness() {
         card.listeners.click({ target: element(), preventDefault() { prevented = true; } });
         return prevented;
     };
-    return { library, toolbar, count, remove, cancel, start, boxes, cards, document, point, click, timers,
+    return { library, toolbar, count, remove, cancel, start, boxes, cards, document, point, click, timers, actions, copy, move, confirm,
         fireTimers() { for (const callback of timers.values()) callback(); timers.clear(); },
     };
 }
+
+test('all batch actions enable with selection and copy move set the destination dialog action', () => {
+    const h = selectionHarness();
+    assert.ok(h.actions.every(action => action.disabled));
+    h.start.click();
+    h.boxes[0].checked = true;
+    h.boxes[0].listeners.change();
+    assert.ok(h.actions.every(action => !action.disabled));
+    h.copy.click();
+    assert.equal(h.confirm.value, 'copy');
+    h.move.click();
+    assert.equal(h.confirm.value, 'move');
+    h.cancel.click();
+    assert.ok(h.actions.every(action => action.disabled));
+});
 
 test('long press reveals checkboxes and delete action without opening the pressed file', () => {
     const h = selectionHarness();
