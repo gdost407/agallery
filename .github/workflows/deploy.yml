@@ -44,3 +44,4 @@ jobs:
             cp -r public/assets .
             rm -rf build
             cp -r public/build .
+            
