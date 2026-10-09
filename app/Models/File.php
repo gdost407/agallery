@@ -28,12 +28,15 @@ class File extends Model
         'checksum_sha256',
         'status',
         'starred_at',
+        'password_hash',
+        'password_changed_at',
     ];
 
     /** @var list<string> */
     protected $hidden = [
         'disk',
         'storage_key',
+        'password_hash',
     ];
 
     /** @var array<string, mixed> */
@@ -50,6 +53,8 @@ class File extends Model
         return [
             'size_bytes' => 'integer',
             'starred_at' => 'datetime',
+            'password_hash' => 'hashed',
+            'password_changed_at' => 'datetime',
         ];
     }
 

@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <x-pwa-head />
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>{{ request()->routeIs('register') ? 'Sign up' : 'Welcome back' }} | AGallery</title>
@@ -37,5 +38,6 @@
             </section>
         </main>
         <footer class="auth-footer">&copy; {{ date('Y') }} AGallery. A home for your digital life.</footer>
+        <x-pwa-install />
     </body>
 </html>

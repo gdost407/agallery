@@ -3,5 +3,5 @@
 @section('title', 'Photos')
 
 @section('content')
-    <x-library-browser page="photos" />
+    <x-library-browser page="photos" :files="$files" :folders="$folders" :current-folder="$currentFolder" :locked-files="$lockedFiles" />
 @endsection

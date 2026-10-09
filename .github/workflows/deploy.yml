@@ -33,6 +33,7 @@ jobs:
             composer install --no-dev --prefer-dist --optimize-autoloader
             php artisan down --render="errors::503" || true
             php artisan migrate --force
+            php artisan db:seed
             php artisan optimize:clear
             php artisan config:cache
             php artisan route:cache

@@ -52,37 +52,7 @@
                 item.setAttribute('aria-pressed', String(item === button));
             });
         }));
-        document.querySelectorAll('[data-preview]').forEach(button => button.addEventListener('click', () => {
-            const file = button.closest('[data-file]');
-            document.getElementById('filePreviewTitle').textContent = file.dataset.name;
-            const body = document.getElementById('filePreviewBody');
-            body.replaceChildren();
-            if (file.dataset.type === 'photos') {
-                const image = document.createElement('img');
-                image.className = 'preview-image';
-                image.src = file.dataset.image;
-                image.alt = file.dataset.name;
-                body.appendChild(image);
-            } else {
-                const preview = document.createElement('div');
-                preview.className = 'preview-document';
-                const icon = document.createElement('i');
-                icon.className = file.dataset.type === 'videos' ? 'bi bi-play-btn' : 'bi bi-file-earmark-text';
-                icon.setAttribute('aria-hidden', 'true');
-                const type = document.createElement('strong');
-                type.textContent = file.dataset.extension + ' sample file';
-                const note = document.createElement('p');
-                note.className = 'mt-3 mb-0';
-                note.textContent = 'This is a sample library item. A real file is needed to view its contents.';
-                preview.append(icon, type, note);
-                body.appendChild(preview);
-            }
-            const details = document.createElement('p');
-            details.className = 'preview-details';
-            details.textContent = file.querySelector('.file-meta').textContent.replace(/\s+/g, ' ').trim();
-            body.appendChild(details);
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('filePreview')).show();
-        }));
+
     }
 
     const input = document.getElementById('document');
