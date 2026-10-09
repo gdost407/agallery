@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\FileThumbnail;
 use App\Http\LibraryAccess;
 use App\Http\Requests\UploadFilesRequest;
 use App\Http\UploadFiles;
 use App\Models\File;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -53,6 +55,22 @@ class FileController extends Controller
             'X-Content-Type-Options' => 'nosniff',
             'Content-Security-Policy' => "sandbox; default-src 'none'",
         ])->setPrivate();
+    }
+
+    public function thumbnail(Request $request, File $file, FileThumbnail $thumbnails): BinaryFileResponse|Response
+    {
+        $this->access->authorizeFile($file, $request->user());
+        $this->access->ensureUnlocked($file, $request);
+        abort_unless($file->disk === 'local' && $file->status === 'ready', 404);
+        abort_unless(Storage::disk('local')->exists($file->storage_key), 404);
+        $headers = ['Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff'];
+        $path = $thumbnails->path($file);
+        if ($path !== null) {
+            return response()->file($path, [...$headers, 'Content-Type' => 'image/jpeg'])->setPrivate();
+        }
+
+        return response()->view('app.components.file-thumbnail', ['file' => $file], 200,
+            [...$headers, 'Content-Type' => 'image/svg+xml', 'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'"]);
     }
 
     public function download(Request $request, File $file): BinaryFileResponse

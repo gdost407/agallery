@@ -11,9 +11,6 @@ use Illuminate\Validation\ValidationException;
 
 class LibraryAccess
 {
-    /** @var array<int, Folder> */
-    private array $folders = [];
-
     public function authorizeOwner(File|Folder $resource, User $user): void
     {
         abort_unless($resource->user_id === $user->id, 404);
@@ -34,26 +31,29 @@ class LibraryAccess
     }
 
     /** @return list<Folder> */
-    public function ancestors(File|Folder $resource): array
+    public function ancestors(File|Folder $resource, Request $request): array
     {
         $folderId = $resource instanceof File ? $resource->folder_id : $resource->parent_id;
         $folders = [];
         $visited = [];
+        $cachedFolders = $request->attributes->get('library_folders', []);
         while ($folderId !== null) {
             abort_if(isset($visited[$folderId]), 404);
             $visited[$folderId] = true;
-            $folder = $this->folders[$folderId] ??= Folder::findOrFail($folderId);
+            $folder = $cachedFolders[$folderId] ??= Folder::findOrFail($folderId);
             abort_unless($folder->user_id === $resource->user_id, 404);
             $folders[] = $folder;
             $folderId = $folder->parent_id;
         }
+
+        $request->attributes->set('library_folders', $cachedFolders);
 
         return array_reverse($folders);
     }
 
     public function firstLocked(File|Folder $resource, Request $request): File|Folder|null
     {
-        foreach ([...$this->ancestors($resource), $resource] as $item) {
+        foreach ([...$this->ancestors($resource, $request), $resource] as $item) {
             if ($item->password_hash !== null && ! $this->isUnlocked($item, $request)) {
                 return $item;
             }

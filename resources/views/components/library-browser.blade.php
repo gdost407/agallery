@@ -1,4 +1,4 @@
-@props(['page' => 'home', 'files', 'folders', 'currentFolder' => null, 'lockedFiles' => []])
+@props(['page' => 'home', 'files', 'folders', 'currentFolder' => null, 'lockedFiles' => [], 'lockedFolders' => []])
 
 @php
     $headings = ['home' => 'My library', 'photos' => 'Photos', 'videos' => 'Videos', 'documents' => 'Documents', 'starred' => 'Starred', 'recent' => 'Recent', 'shared' => 'Shared with me', 'trash' => 'Trash'];
@@ -26,9 +26,12 @@
         <div class="section-heading"><h2>Folders</h2></div>
         <div class="row g-3">
             @foreach ($folders as $folder)
+                @php
+                    $folderLocked = $lockedFolders[$folder->id] ?? false;
+                @endphp
                 <div class="col-12 col-sm-6 col-xl-4">
                     <a href="{{ route('app.folders.show', $folder->uuid) }}" class="collection-card blue">
-                        <span class="collection-icon"><i class="bi bi-{{ $folder->password_hash ? 'folder-lock' : 'folder' }}" aria-hidden="true"></i></span>
+                        <span class="collection-icon {{ $folderLocked ? 'protected-folder-icon' : '' }}"><i class="bi bi-folder" aria-hidden="true"></i>@if ($folderLocked)<span class="folder-lock-badge"><i class="bi bi-lock-fill" aria-hidden="true"></i><i class="bi bi-link-45deg" aria-hidden="true"></i></span>@endif</span>
                         <div class="text-break"><strong>{{ $folder->name }}</strong><span>{{ $folder->password_hash ? 'Password protected' : 'Folder' }}</span></div>
                         <i class="bi bi-arrow-up-right collection-arrow" aria-hidden="true"></i>
                     </a>
@@ -60,10 +63,11 @@
             <article class="file-card" data-file data-name="{{ $file->original_name }}" data-type="{{ $type }}" data-date="{{ $file->created_at->toIso8601String() }}">
                 @if ($page !== 'trash')
                     <a href="{{ route('app.files.show', $file->uuid) }}" class="file-preview document-preview blue" aria-label="Open {{ $file->original_name }}">
-                        @if ($type === 'photos' && ! $locked && in_array($file->mime_type, ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif']))
-                            <img src="{{ route('app.files.content', $file->uuid) }}" alt="" loading="lazy">
+                        @if (! $locked)
+                            <img src="{{ route('app.files.thumbnail', $file->uuid) }}" alt="" loading="lazy" decoding="async" width="480" height="320">
                         @else
-                            <div class="document-sheet"><span>{{ strtoupper($file->extension) }}</span><i class="bi bi-{{ $locked ? 'lock' : ($type === 'videos' ? 'play-btn' : 'file-earmark-text') }}" aria-hidden="true"></i></div>
+                            <div class="document-sheet locked-preview-placeholder" aria-hidden="true"><span>{{ strtoupper($file->extension) }}</span><i class="bi bi-{{ $type === 'videos' ? 'play-btn' : ($type === 'photos' ? 'image' : 'file-earmark-text') }}"></i></div>
+                            <span class="protected-preview-overlay"><span class="protected-preview-icons"><i class="bi bi-lock-fill" aria-hidden="true"></i><i class="bi bi-link-45deg" aria-hidden="true"></i></span><span>Password protected</span><small>Enter password to open</small></span>
                         @endif
                         <span class="file-extension">{{ strtoupper($file->extension) }}</span>
                     </a>

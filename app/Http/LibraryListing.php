@@ -42,9 +42,15 @@ class LibraryListing
             $lockedFiles[$file->id] = $this->access->firstLocked($file, $request) !== null;
         }
 
+        $lockedFolders = [];
+        foreach ($folders as $item) {
+            $lockedFolders[$item->id] = $this->access->firstLocked($item, $request) !== null;
+        }
+
         return view('app.pages.'.($folder !== null ? 'home' : $page), [
             'files' => $files, 'folders' => $folders, 'currentFolder' => $folder,
             'lockedFiles' => $lockedFiles,
+            'lockedFolders' => $lockedFolders,
         ]);
     }
 }

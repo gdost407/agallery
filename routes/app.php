@@ -26,6 +26,7 @@ Route::middleware(['auth', 'verified'])->prefix('app')->name('app.')->group(func
     Route::post('/files', [FileController::class, 'store'])->name('files.store');
     Route::get('/files/{file:uuid}', [FileController::class, 'show'])->name('files.show');
     Route::get('/files/{file:uuid}/content', [FileController::class, 'content'])->name('files.content');
+    Route::get('/files/{file:uuid}/thumbnail', [FileController::class, 'thumbnail'])->name('files.thumbnail');
     Route::get('/files/{file:uuid}/download', [FileController::class, 'download'])->name('files.download');
     Route::patch('/files/{file:uuid}/star', [FileController::class, 'star'])->name('files.star');
     Route::delete('/files/{file:uuid}', [FileController::class, 'destroy'])->name('files.destroy');
