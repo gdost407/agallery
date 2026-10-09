@@ -5,15 +5,12 @@
     const search = document.getElementById('librarySearch');
     const grid = document.getElementById('fileGrid');
     const files = Array.from(document.querySelectorAll('[data-file]'));
-    const chips = Array.from(document.querySelectorAll('[data-filter]'));
-    let activeFilter = 'all';
 
     function filterFiles() {
         const query = search.value.trim().toLocaleLowerCase();
         let visible = 0;
         files.forEach(file => {
-            const matches = (activeFilter === 'all' || file.dataset.type === activeFilter)
-                && file.dataset.name.toLocaleLowerCase().includes(query);
+            const matches = file.dataset.name.toLocaleLowerCase().includes(query);
             file.hidden = !matches;
             if (matches) visible++;
         });
@@ -23,17 +20,9 @@
 
     if (library) {
         search.addEventListener('input', filterFiles);
-        chips.forEach(chip => chip.addEventListener('click', () => {
-            activeFilter = chip.dataset.filter;
-            chips.forEach(item => {
-                item.classList.toggle('active', item === chip);
-                item.setAttribute('aria-pressed', String(item === chip));
-            });
-            filterFiles();
-        }));
         document.getElementById('resetSearch').addEventListener('click', () => {
             search.value = '';
-            chips[0].click();
+            filterFiles();
             search.focus();
         });
         document.getElementById('fileSort').addEventListener('change', event => {

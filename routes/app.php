@@ -24,6 +24,7 @@ Route::middleware(['auth', 'verified'])->prefix('app')->name('app.')->group(func
     Route::get('/shared', [LibraryController::class, 'shared'])->name('shared');
     Route::get('/trash', [LibraryController::class, 'trash'])->name('trash');
     Route::get('/private-folders', [LibraryController::class, 'privateFolders'])->name('private');
+    Route::get('/folders', [LibraryController::class, 'folders'])->name('folders');
 
     Route::post('/files', [FileController::class, 'store'])->name('files.store');
     Route::delete('/files', [FileActionController::class, 'destroySelected'])->name('files.bulk-destroy');

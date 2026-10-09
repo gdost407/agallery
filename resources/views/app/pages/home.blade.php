@@ -3,5 +3,6 @@
 @section('title', 'My library')
 
 @section('content')
-    <x-library-browser page="home" :files="$files" :folders="$folders" :current-folder="$currentFolder" :locked-files="$lockedFiles" :locked-folders="$lockedFolders" />
+    @if ($analytics)<x-library-analytics :analytics="$analytics" />@endif
+    <x-library-browser page="home" :files="$files" :folders="$folders" :current-folder="$currentFolder" :locked-files="$lockedFiles" :locked-folders="$lockedFolders" :folder-usage="$folderUsage" :current-folder-usage="$currentFolderUsage" />
 @endsection

@@ -1,7 +1,8 @@
-@props(['page' => 'home', 'files', 'folders', 'currentFolder' => null, 'lockedFiles' => [], 'lockedFolders' => []])
+@props(['page' => 'home', 'files', 'folders', 'currentFolder' => null, 'lockedFiles' => [], 'lockedFolders' => [], 'folderUsage' => [], 'currentFolderUsage' => null])
 
 @php
-    $headings = ['home' => 'My library', 'private' => 'Private folders', 'photos' => 'Photos', 'videos' => 'Videos', 'documents' => 'Documents', 'starred' => 'Starred', 'recent' => 'Recent', 'shared' => 'Shared with me', 'trash' => 'Trash'];
+    $headings = ['home' => 'My library', 'folders' => 'Folders', 'private' => 'Private folders', 'photos' => 'Photos', 'videos' => 'Videos', 'documents' => 'Documents', 'starred' => 'Starred', 'recent' => 'Recent', 'shared' => 'Shared with me', 'trash' => 'Trash'];
+    $filesHeading = $page === 'home' && ! $currentFolder ? 'Recent uploads' : ($page === 'folders' ? 'Files outside folders' : 'Your files');
     $heading = $currentFolder?->name ?? $headings[$page];
 @endphp
 
@@ -15,9 +16,10 @@
 
 @if ($currentFolder)
     <div class="d-flex gap-3 align-items-center mb-3">
-        <a href="{{ $currentFolder->parent_id ? route('app.folders.show', $currentFolder->parent->uuid) : route('app.dashboard') }}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to parent</a>
+        <a href="{{ $currentFolder->parent_id ? route('app.folders.show', $currentFolder->parent->uuid) : route($currentFolder->password_hash ? 'app.private' : 'app.folders') }}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to parent</a>
         <span class="text-secondary">{{ $currentFolder->password_hash ? 'Password protected' : 'No folder password' }}</span>
     </div>
+    @if ($currentFolderUsage)<p class="folder-usage-summary"><i class="bi bi-folder" aria-hidden="true"></i><strong>{{ $currentFolderUsage['label'] }}</strong> · {{ $currentFolderUsage['count'] }} files including subfolders and Trash</p>@endif
     <x-resource-password :action="route('app.folders.password', $currentFolder->uuid)" :protected="$currentFolder->password_hash !== null" />
 @endif
 
@@ -32,7 +34,7 @@
                 <div class="col-12 col-sm-6 col-xl-4">
                     <a href="{{ route('app.folders.show', $folder->uuid) }}" class="collection-card blue">
                         <span class="collection-icon {{ $folderLocked ? 'protected-folder-icon' : '' }}"><i class="bi bi-folder" aria-hidden="true"></i>@if ($folderLocked)<span class="folder-lock-badge"><i class="bi bi-lock-fill" aria-hidden="true"></i><i class="bi bi-link-45deg" aria-hidden="true"></i></span>@endif</span>
-                        <div class="text-break"><strong>{{ $folder->name }}</strong><span>{{ $folder->password_hash ? 'Password protected' : 'Folder' }}</span></div>
+                        <div class="text-break"><strong>{{ $folder->name }}</strong><span>{{ $folder->password_hash ? 'Password protected' : 'Folder' }}</span>@if(isset($folderUsage[$folder->id]))<span>{{ $folderUsage[$folder->id]['label'] }} · {{ $folderUsage[$folder->id]['count'] }} files including subfolders</span>@endif</div>
                         <i class="bi bi-arrow-up-right collection-arrow" aria-hidden="true"></i>
                     </a>
                 </div>
@@ -54,13 +56,8 @@
         </div>
         <button class="btn btn-sm btn-outline-secondary mb-3" type="button" data-start-selection>Select files</button>
     @endif
-    <div class="section-heading file-section-heading"><div class="d-flex align-items-center gap-2"><h2 id="filesTitle">Your files</h2><span class="count-badge" id="fileCount" aria-live="polite">{{ $files->count() }}</span></div><span>{{ $files->total() }} files</span></div>
+    <div class="section-heading file-section-heading"><div class="d-flex align-items-center gap-2"><h2 id="filesTitle">{{ $filesHeading }}</h2><span class="count-badge" id="fileCount" aria-live="polite">{{ $files->count() }}</span></div><span>{{ $files->total() }} files</span></div>
     <div class="library-toolbar">
-        <div class="filter-chips" role="group" aria-label="Filter files on this page">
-            @foreach (['all' => 'All files', 'photos' => 'Photos', 'videos' => 'Videos', 'documents' => 'Documents', 'other' => 'Other files'] as $type => $label)
-                <button type="button" class="filter-chip {{ $type === 'all' ? 'active' : '' }}" data-filter="{{ $type }}" aria-pressed="{{ $type === 'all' ? 'true' : 'false' }}">{{ $label }}</button>
-            @endforeach
-        </div>
         <div class="d-flex align-items-center gap-2 toolbar-options">
             <label class="visually-hidden" for="fileSort">Sort files on this page</label><select id="fileSort" class="form-select sort-select"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="name">Name A–Z</option></select>
             <div class="view-toggle" role="group" aria-label="File view"><button class="active" type="button" data-view="grid" aria-label="Grid view" aria-pressed="true"><i class="bi bi-grid" aria-hidden="true"></i></button><button type="button" data-view="list" aria-label="List view" aria-pressed="false"><i class="bi bi-list-ul" aria-hidden="true"></i></button></div>
@@ -103,7 +100,7 @@
             </article>
         @endforeach
     </div>
-    <div class="search-empty {{ $files->isEmpty() ? '' : 'd-none' }}" id="searchEmpty" role="status"><span><i class="bi bi-search" aria-hidden="true"></i></span><h3>No files found</h3><p>Upload a file or try another search.</p><button type="button" class="btn btn-outline-primary" id="resetSearch">Clear filters</button></div>
+    <div class="search-empty {{ $files->isEmpty() ? '' : 'd-none' }}" id="searchEmpty" role="status"><span><i class="bi bi-search" aria-hidden="true"></i></span><h3>No files found</h3><p>Upload a file or try another search.</p><button type="button" class="btn btn-outline-primary" id="resetSearch">Clear search</button></div>
     <div class="mt-4">{{ $files->links() }}</div>
 </section>
 @endif

@@ -37,4 +37,9 @@ class LibraryController extends Controller
     {
         return $listing->render($request, 'private');
     }
+
+    public function folders(Request $request, LibraryListing $listing): View
+    {
+        return $listing->render($request, 'folders');
+    }
 }

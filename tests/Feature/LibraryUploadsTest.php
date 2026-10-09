@@ -72,7 +72,8 @@ test('folders support nested uploads and foreign folder ids are rejected', funct
         'folder_id' => $child->id, 'files' => [UploadedFile::fake()->create('inside.txt', 1, 'text/plain')],
     ])->assertRedirect(route('app.folders.show', $child->uuid))->assertSessionHasNoErrors();
     $this->get(route('app.folders.show', $child->uuid))->assertSee('inside.txt');
-    $this->get(route('app.dashboard'))->assertSee('Work')->assertDontSee('inside.txt');
+    $this->get(route('app.dashboard'))->assertSee('Work')->assertSee('inside.txt');
+    $this->get(route('app.folders'))->assertSee('Work')->assertDontSee('inside.txt');
     $this->post(route('app.files.store'), [
         'folder_id' => $otherFolder->id, 'files' => [UploadedFile::fake()->image('blocked.jpg')],
     ])->assertSessionHasErrors('folder_id');

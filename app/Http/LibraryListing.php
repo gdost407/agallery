@@ -10,7 +10,7 @@ use Illuminate\View\View;
 
 class LibraryListing
 {
-    public function __construct(private LibraryAccess $access) {}
+    public function __construct(private LibraryAccess $access, private LibraryAnalytics $analytics) {}
 
     public function render(Request $request, string $page, ?Folder $folder = null): View
     {
@@ -38,14 +38,14 @@ class LibraryListing
         if ($page === 'private') {
             $query->whereRaw('1 = 0');
         }
-        if ($folder !== null || $page === 'home') {
+        if ($folder !== null || $page === 'folders') {
             $query->where('folder_id', $folder?->id);
         }
         if ($request->filled('q')) {
             $query->where('original_name', 'like', '%'.mb_substr($request->string('q')->toString(), 0, 255).'%');
         }
         $files = $query->latest()->orderByDesc('id')->paginate(48)->withQueryString();
-        $folders = $page === 'home'
+        $folders = in_array($page, ['home', 'folders'], true)
             ? $user->folders()->where('parent_id', $folder?->id)->orderBy('name')->get()
             : collect();
         if ($page === 'private') {
@@ -65,10 +65,17 @@ class LibraryListing
             $lockedFolders[$item->id] = $this->access->firstLocked($item, $request) !== null;
         }
 
+        $analytics = $page === 'home' && $folder === null
+            ? $this->analytics->dashboard($user, $folderTree, $folders, $hiddenFolderIds) : null;
+        $folderUsage = $analytics['folderUsage'] ?? (in_array($page, ['home', 'folders', 'private'], true)
+            ? $this->analytics->folderUsage($user, $folderTree) : []);
+
         return view('app.pages.'.($folder !== null ? 'home' : $page), [
             'files' => $files, 'folders' => $folders, 'currentFolder' => $folder,
             'lockedFiles' => $lockedFiles,
             'lockedFolders' => $lockedFolders,
+            'analytics' => $analytics, 'folderUsage' => $folderUsage,
+            'currentFolderUsage' => $folder !== null ? ($folderUsage[$folder->id] ?? null) : null,
         ]);
     }
 

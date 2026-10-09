@@ -9,6 +9,7 @@
         <nav class="library-nav" aria-label="Library">
             @foreach ([
                 ['app.dashboard', 'grid', 'My library'],
+                ['app.folders', 'folder', 'Folders'],
                 ['app.photos', 'image', 'Photos'],
                 ['app.videos', 'play-btn', 'Videos'],
                 ['app.documents', 'file-earmark-text', 'Documents'],
