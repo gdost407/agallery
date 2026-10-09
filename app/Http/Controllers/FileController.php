@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\FileThumbnail;
+use App\Http\FileViewer;
 use App\Http\LibraryAccess;
 use App\Http\Requests\UploadFilesRequest;
 use App\Http\UploadFiles;
@@ -24,7 +25,7 @@ class FileController extends Controller
         return $uploads->handle($request);
     }
 
-    public function show(Request $request, File $file): View
+    public function show(Request $request, File $file, FileViewer $viewer): View
     {
         $this->access->authorizeFile($file, $request->user());
         $locked = $this->access->firstLocked($file, $request);
@@ -35,7 +36,7 @@ class FileController extends Controller
             ]);
         }
 
-        return view('app.pages.file', ['file' => $file, 'currentFolder' => null]);
+        return view('app.pages.file', $viewer->data($request, $file));
     }
 
     public function content(Request $request, File $file): BinaryFileResponse

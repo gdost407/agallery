@@ -46,6 +46,14 @@
     @if ($folders->isEmpty())<p>No private folders yet. Create a folder with a password to add one here.</p>@endif
 @else
 <section class="file-library" data-library data-page="{{ $page }}" aria-labelledby="filesTitle">
+    @if ($page !== 'trash' && $page !== 'shared')
+        <div class="selection-toolbar mb-3" data-selection-toolbar hidden>
+            <span data-selection-count role="status" aria-live="polite">0 selected</span>
+            <form id="selectedFilesDelete" method="POST" action="{{ route('app.files.bulk-destroy') }}">@csrf @method('DELETE')<button class="btn btn-danger btn-sm" type="submit" data-delete-selected disabled><i class="bi bi-trash me-1" aria-hidden="true"></i>Delete selected</button></form>
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-cancel-selection>Cancel</button>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary mb-3" type="button" data-start-selection>Select files</button>
+    @endif
     <div class="section-heading file-section-heading"><div class="d-flex align-items-center gap-2"><h2 id="filesTitle">Your files</h2><span class="count-badge" id="fileCount" aria-live="polite">{{ $files->count() }}</span></div><span>{{ $files->total() }} files</span></div>
     <div class="library-toolbar">
         <div class="filter-chips" role="group" aria-label="Filter files on this page">
@@ -65,6 +73,9 @@
                 $locked = $lockedFiles[$file->id] ?? false;
             @endphp
             <article class="file-card" data-file data-name="{{ $file->original_name }}" data-type="{{ $type }}" data-date="{{ $file->created_at->toIso8601String() }}">
+                @if ($page !== 'trash' && $page !== 'shared' && $file->user_id === auth()->id() && ! $locked)
+                    <label class="file-select"><input type="checkbox" name="files[]" value="{{ $file->uuid }}" form="selectedFilesDelete" data-file-select aria-label="Select {{ $file->original_name }}"></label>
+                @endif
                 @if ($page !== 'trash')
                     <a href="{{ route('app.files.show', $file->uuid) }}" class="file-preview document-preview blue" aria-label="Open {{ $file->original_name }}">
                         @if (! $locked)

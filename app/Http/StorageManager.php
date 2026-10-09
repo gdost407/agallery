@@ -2,6 +2,7 @@
 
 namespace App\Http;
 
+use App\Models\File;
 use App\Models\Folder;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -106,6 +107,39 @@ class StorageManager
             });
         } catch (Throwable $exception) {
             Storage::disk('local')->delete($paths);
+            throw $exception;
+        }
+    }
+
+    public function copy(File $source, User $user, ?Folder $folder): File
+    {
+        $key = 'library/'.$user->id.'/'.Str::uuid();
+        try {
+            return DB::transaction(function () use ($source, $user, $folder, $key): File {
+                $account = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+                $used = $this->used($account);
+                if ($source->size_bytes > max(0, $this->capacity($account) - $used - $account->reserved_storage_bytes)) {
+                    throw ValidationException::withMessages(['folder_id' => 'Not enough storage to copy this file.']);
+                }
+                $disk = Storage::disk('local');
+                if (! $disk->copy($source->storage_key, $key)) {
+                    throw new RuntimeException('The file could not be copied.');
+                }
+                $copy = $source->replicate(['uuid', 'starred_at', 'deleted_at']);
+                $copy->folder_id = $folder?->id;
+                $copy->storage_key = $key;
+                $copy->save();
+                $account->storageUsageEvents()->create([
+                    'file_id' => $copy->id, 'operation' => 'upload',
+                    'bytes_delta' => $copy->size_bytes, 'idempotency_key' => (string) Str::uuid(),
+                ]);
+                $account->used_storage_bytes = $used + $copy->size_bytes;
+                $account->save();
+
+                return $copy;
+            });
+        } catch (Throwable $exception) {
+            Storage::disk('local')->delete($key);
             throw $exception;
         }
     }
