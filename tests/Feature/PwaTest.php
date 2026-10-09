@@ -31,3 +31,26 @@ test('manifest icons have their declared dimensions and support app installation
     }
     expect(array_column($manifest['icons'], 'purpose'))->toContain('maskable');
 });
+
+test('pwa assets are served at browser facing URLs without logging in', function (string $asset, string $contentType): void {
+    $this->get(route('pwa.asset', ['pwaAsset' => $asset]))
+        ->assertSuccessful()
+        ->assertHeader('Content-Type', $contentType)
+        ->assertHeader('X-Content-Type-Options', 'nosniff');
+})->with([
+    ['manifest.webmanifest', 'application/manifest+json'],
+    ['service-worker.js', 'application/javascript'],
+    ['pwa.js', 'application/javascript'],
+    ['pwa.css', 'text/css; charset=utf-8'],
+    ['offline.html', 'text/html; charset=utf-8'],
+    ['pwa-icon-180.png', 'image/png'],
+    ['pwa-icon-192.png', 'image/png'],
+    ['pwa-icon-512.png', 'image/png'],
+    ['pwa-icon-maskable-512.png', 'image/png'],
+]);
+
+test('pwa asset routes cannot expose other project files', function (): void {
+    $this->get('/composer.json')->assertNotFound();
+    $this->get('/.env')->assertNotFound();
+    $this->get('/pwa-icon-999.png')->assertNotFound();
+});
