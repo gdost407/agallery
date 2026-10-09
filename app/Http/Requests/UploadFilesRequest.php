@@ -35,7 +35,8 @@ class UploadFilesRequest extends FormRequest
             'files' => ['required', 'array', 'min:1', 'max:20'],
             'files.*' => $fileRules,
             'folder_id' => ['nullable', 'integer', Rule::exists('folders', 'id')->where('user_id', $this->user()->id)->whereNull('deleted_at')],
-            'password' => ['nullable', 'string', 'min:8', 'max:255', 'confirmed'],
+            'password' => ['prohibited'],
+            'password_confirmation' => ['prohibited'],
         ];
     }
 }

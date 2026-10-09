@@ -1,7 +1,7 @@
 @props(['page' => 'home', 'files', 'folders', 'currentFolder' => null, 'lockedFiles' => [], 'lockedFolders' => []])
 
 @php
-    $headings = ['home' => 'My library', 'photos' => 'Photos', 'videos' => 'Videos', 'documents' => 'Documents', 'starred' => 'Starred', 'recent' => 'Recent', 'shared' => 'Shared with me', 'trash' => 'Trash'];
+    $headings = ['home' => 'My library', 'private' => 'Private folders', 'photos' => 'Photos', 'videos' => 'Videos', 'documents' => 'Documents', 'starred' => 'Starred', 'recent' => 'Recent', 'shared' => 'Shared with me', 'trash' => 'Trash'];
     $heading = $currentFolder?->name ?? $headings[$page];
 @endphp
 
@@ -41,6 +41,10 @@
     </section>
 @endif
 
+@if ($page === 'private')
+    <p class="text-secondary">Protected folders and their contents are hidden from your normal gallery. Open a folder and enter its password to access the files inside.</p>
+    @if ($folders->isEmpty())<p>No private folders yet. Create a folder with a password to add one here.</p>@endif
+@else
 <section class="file-library" data-library data-page="{{ $page }}" aria-labelledby="filesTitle">
     <div class="section-heading file-section-heading"><div class="d-flex align-items-center gap-2"><h2 id="filesTitle">Your files</h2><span class="count-badge" id="fileCount" aria-live="polite">{{ $files->count() }}</span></div><span>{{ $files->total() }} files</span></div>
     <div class="library-toolbar">
@@ -91,3 +95,4 @@
     <div class="search-empty {{ $files->isEmpty() ? '' : 'd-none' }}" id="searchEmpty" role="status"><span><i class="bi bi-search" aria-hidden="true"></i></span><h3>No files found</h3><p>Upload a file or try another search.</p><button type="button" class="btn btn-outline-primary" id="resetSearch">Clear filters</button></div>
     <div class="mt-4">{{ $files->links() }}</div>
 </section>
+@endif

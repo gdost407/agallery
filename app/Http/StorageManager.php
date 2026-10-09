@@ -58,11 +58,11 @@ class StorageManager
     }
 
     /** @param list<UploadedFile> $uploads */
-    public function upload(User $user, array $uploads, ?Folder $folder, ?string $password): void
+    public function upload(User $user, array $uploads, ?Folder $folder): void
     {
         $paths = [];
         try {
-            DB::transaction(function () use ($user, $uploads, $folder, $password, &$paths): void {
+            DB::transaction(function () use ($user, $uploads, $folder, &$paths): void {
                 $account = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
                 $used = $this->used($account);
                 $incoming = array_sum(array_map(fn (UploadedFile $upload): int => $upload->getSize(), $uploads));
@@ -94,8 +94,7 @@ class StorageManager
                         'disk' => 'local', 'storage_key' => $key,
                         'size_bytes' => $upload->getSize(),
                         'checksum_sha256' => hash_file('sha256', $upload->getRealPath()),
-                        'status' => 'ready', 'password_hash' => $password,
-                        'password_changed_at' => $password !== null ? now() : null,
+                        'status' => 'ready',
                     ]);
                     $account->storageUsageEvents()->create([
                         'file_id' => $file->id, 'operation' => 'upload',

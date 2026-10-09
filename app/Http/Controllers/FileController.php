@@ -7,6 +7,7 @@ use App\Http\LibraryAccess;
 use App\Http\Requests\UploadFilesRequest;
 use App\Http\UploadFiles;
 use App\Models\File;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -18,7 +19,7 @@ class FileController extends Controller
 {
     public function __construct(private LibraryAccess $access) {}
 
-    public function store(UploadFilesRequest $request, UploadFiles $uploads): RedirectResponse
+    public function store(UploadFilesRequest $request, UploadFiles $uploads): RedirectResponse|JsonResponse
     {
         return $uploads->handle($request);
     }

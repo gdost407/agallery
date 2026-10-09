@@ -22,6 +22,7 @@ Route::middleware(['auth', 'verified'])->prefix('app')->name('app.')->group(func
     Route::get('/recent', [LibraryController::class, 'recent'])->name('recent');
     Route::get('/shared', [LibraryController::class, 'shared'])->name('shared');
     Route::get('/trash', [LibraryController::class, 'trash'])->name('trash');
+    Route::get('/private-folders', [LibraryController::class, 'privateFolders'])->name('private');
 
     Route::post('/files', [FileController::class, 'store'])->name('files.store');
     Route::get('/files/{file:uuid}', [FileController::class, 'show'])->name('files.show');

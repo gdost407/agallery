@@ -33,7 +33,7 @@ test('photo cards use private resized thumbnails and reuse generated previews', 
     expect($user->fresh()->used_storage_bytes)->toBe($file->size_bytes);
 });
 
-test('locked ancestors block even cached thumbnails and show blurred cards until password is accepted', function (): void {
+test('locked ancestors block cached thumbnails and private contents stay hidden from normal galleries', function (): void {
     $user = User::factory()->create();
     $folder = Folder::factory()->for($user)->create();
     $child = Folder::factory()->for($user)->for($folder, 'parent')->create();
@@ -43,17 +43,18 @@ test('locked ancestors block even cached thumbnails and show blurred cards until
     $file = $user->files()->sole();
     $this->get(route('app.files.thumbnail', $file->uuid))->assertSuccessful();
     $folder->update(['password_hash' => 'folder-secret']);
-    $this->get(route('app.dashboard'))->assertSee('bi-lock-fill', false)->assertSee('bi-link-45deg', false);
-    $this->get(route('app.photos'))->assertSee('locked-preview-placeholder', false)
-        ->assertSee('Enter password to open')->assertDontSee(route('app.files.thumbnail', $file->uuid), false)
+    $this->get(route('app.private'))->assertSee('bi-lock-fill', false)->assertSee('bi-link-45deg', false);
+    $this->get(route('app.photos'))->assertDontSee($file->original_name)
+        ->assertDontSee(route('app.files.thumbnail', $file->uuid), false)
         ->assertDontSee(route('app.files.content', $file->uuid), false);
     $this->get(route('app.files.thumbnail', $file->uuid))->assertStatus(423);
     $this->post(route('app.files.unlock', $file->uuid), ['password' => 'wrong-password'])->assertSessionHasErrors('password');
     $this->get(route('app.files.thumbnail', $file->uuid))->assertStatus(423);
     $this->post(route('app.files.unlock', $file->uuid), ['password' => 'folder-secret'])->assertRedirect();
     $this->get(route('app.files.thumbnail', $file->uuid))->assertSuccessful();
-    $this->get(route('app.photos'))->assertSee(route('app.files.thumbnail', $file->uuid), false)
+    $this->get(route('app.folders.show', $child->uuid))->assertSee(route('app.files.thumbnail', $file->uuid), false)
         ->assertDontSee('locked-preview-placeholder', false);
+    $this->get(route('app.photos'))->assertDontSee($file->original_name);
     $this->travel(31)->minutes();
     $this->get(route('app.files.thumbnail', $file->uuid))->assertStatus(423);
 });

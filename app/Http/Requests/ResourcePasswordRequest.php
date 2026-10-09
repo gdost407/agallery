@@ -15,7 +15,7 @@ class ResourcePasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'password' => ['nullable', 'string', 'min:8', 'max:255', 'confirmed'],
+            'password' => $this->routeIs('app.files.password') ? ['prohibited'] : ['nullable', 'string', 'min:8', 'max:255', 'confirmed'],
             'current_password' => ['nullable', 'string', 'max:255'],
         ];
     }

@@ -20,4 +20,5 @@ test('signed in users can render each library page', function (string $routeName
     'app.recent',
     'app.shared',
     'app.trash',
+    'app.private',
 ]);

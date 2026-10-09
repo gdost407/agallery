@@ -16,6 +16,7 @@
                 ['app.recent', 'clock-history', 'Recent'],
                 ['app.shared', 'people', 'Shared with me'],
                 ['app.trash', 'trash3', 'Trash'],
+                ['app.private', 'shield-lock', 'Private folders'],
             ] as [$routeName, $icon, $label])
                 <a href="{{ route($routeName) }}" class="library-nav-link {{ request()->routeIs($routeName) || ($routeName === 'app.dashboard' && request()->routeIs('dashboard')) ? 'active' : '' }}" @if(request()->routeIs($routeName) || ($routeName === 'app.dashboard' && request()->routeIs('dashboard'))) aria-current="page" @endif>
                     <i class="bi bi-{{ $icon }}" aria-hidden="true"></i><span>{{ $label }}</span>

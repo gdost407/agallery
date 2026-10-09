@@ -21,6 +21,5 @@
             <form method="POST" action="{{ route('app.files.star', $file->uuid) }}">@csrf @method('PATCH')<button class="btn btn-outline-primary" type="submit">{{ $file->starred_at ? 'Remove star' : 'Star file' }}</button></form>
             <form method="POST" action="{{ route('app.files.destroy', $file->uuid) }}">@csrf @method('DELETE')<button class="btn btn-outline-danger" type="submit">Move to trash</button></form>
         </div>
-        <x-resource-password :action="route('app.files.password', $file->uuid)" :protected="$file->password_hash !== null" />
     @endif
 @endsection

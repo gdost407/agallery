@@ -4,6 +4,7 @@ namespace App\Http;
 
 use App\Http\Requests\UploadFilesRequest;
 use App\Models\Folder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -12,7 +13,7 @@ class UploadFiles
 {
     public function __construct(private LibraryAccess $access, private StorageManager $storage) {}
 
-    public function handle(UploadFilesRequest $request): RedirectResponse
+    public function handle(UploadFilesRequest $request): RedirectResponse|JsonResponse
     {
         $folder = $request->validated('folder_id') !== null ? Folder::findOrFail($request->validated('folder_id')) : null;
         if ($folder !== null) {
@@ -20,7 +21,7 @@ class UploadFiles
             $this->access->ensureUnlocked($folder, $request);
         }
         try {
-            $this->storage->upload($request->user(), $request->file('files'), $folder, $request->validated('password'));
+            $this->storage->upload($request->user(), $request->file('files'), $folder);
         } catch (ValidationException $exception) {
             throw $exception;
         } catch (Throwable $exception) {
@@ -33,6 +34,12 @@ class UploadFiles
             'app.documents.store' => 'app.documents',
             default => 'app.dashboard',
         };
+
+        if ($request->expectsJson()) {
+            $request->session()->flash('status', 'Files uploaded.');
+
+            return response()->json(['redirect' => $folder !== null ? route('app.folders.show', $folder->uuid) : route($route)]);
+        }
 
         return $folder !== null
             ? to_route('app.folders.show', $folder->uuid)->with('status', 'Files uploaded.')

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\LibraryListing;
 use App\Http\Requests\UploadFilesRequest;
 use App\Http\UploadFiles;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,7 +17,7 @@ class VideoController extends Controller
         return $listing->render($request, 'videos');
     }
 
-    public function store(UploadFilesRequest $request, UploadFiles $uploads): RedirectResponse
+    public function store(UploadFilesRequest $request, UploadFiles $uploads): RedirectResponse|JsonResponse
     {
         return $uploads->handle($request);
     }

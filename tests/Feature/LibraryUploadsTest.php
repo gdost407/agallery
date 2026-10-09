@@ -101,15 +101,12 @@ test('folder protection blocks descendants direct downloads and uploads until un
     $this->get(route('app.files.download', $file->uuid))->assertStatus(423);
 });
 
-test('file passwords can be set changed and removed without bypassing existing protection', function (): void {
+test('legacy file passwords can still be unlocked and removed but new file passwords are rejected', function (): void {
     $user = User::factory()->create();
-    $this->actingAs($user)->post(route('app.files.store'), [
-        'files' => [UploadedFile::fake()->create('secret.txt', 1, 'text/plain')],
-        'password' => 'first-password', 'password_confirmation' => 'first-password',
-    ])->assertSessionHasNoErrors();
-    $file = $user->files()->sole();
+    $file = File::factory()->for($user)->create(['password_hash' => 'first-password']);
+    Storage::disk('local')->put($file->storage_key, 'private data');
     expect(Hash::check('first-password', $file->password_hash))->toBeTrue();
-    $this->get(route('app.files.download', $file->uuid))->assertStatus(423);
+    $this->actingAs($user)->get(route('app.files.download', $file->uuid))->assertStatus(423);
     $this->put(route('app.files.password', $file->uuid), [
         'password' => 'new-password', 'password_confirmation' => 'new-password',
         'current_password' => 'incorrect',
@@ -119,8 +116,8 @@ test('file passwords can be set changed and removed without bypassing existing p
     $this->get(route('app.files.download', $file->uuid))->assertSuccessful();
     $this->put(route('app.files.password', $file->uuid), [
         'password' => 'new-password', 'password_confirmation' => 'new-password',
-    ])->assertRedirect()->assertSessionHasNoErrors();
-    expect(Hash::check('new-password', $file->fresh()->password_hash))->toBeTrue();
+    ])->assertSessionHasErrors('password');
+    expect(Hash::check('first-password', $file->fresh()->password_hash))->toBeTrue();
 
     $file->update(['password_hash' => 'changed-elsewhere']);
     $this->get(route('app.files.download', $file->uuid))->assertStatus(423);

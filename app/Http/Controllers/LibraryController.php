@@ -32,4 +32,9 @@ class LibraryController extends Controller
     {
         return $listing->render($request, 'trash');
     }
+
+    public function privateFolders(Request $request, LibraryListing $listing): View
+    {
+        return $listing->render($request, 'private');
+    }
 }
