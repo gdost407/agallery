@@ -5,6 +5,8 @@ namespace App\Http;
 use App\Models\File;
 use App\Models\Folder;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -15,6 +17,72 @@ use Throwable;
 
 class StorageManager
 {
+    /** @param Collection<int, File> $files */
+    public function deleteFiles(User $user, Collection $files, Request $request): void
+    {
+        $access = app(LibraryAccess::class);
+        foreach ($files as $file) {
+            $access->authorizeOwner($file, $user);
+            $access->ensureUnlocked($file, $request);
+        }
+        foreach ($files as $file) {
+            DB::transaction(function () use ($user, $file): void {
+                $account = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+                $stored = $account->files()->withTrashed()->whereKey($file->id)->lockForUpdate()->first();
+                if ($stored === null) {
+                    return;
+                }
+                try {
+                    $disk = Storage::disk($stored->disk);
+                    if (! $disk->delete($stored->storage_key) || ! Storage::disk('local')->deleteDirectory('thumbnails/'.$stored->uuid)) {
+                        throw new RuntimeException('Stored file cleanup failed.');
+                    }
+                } catch (Throwable $exception) {
+                    report($exception);
+                    throw ValidationException::withMessages(['files' => 'The file could not be permanently deleted. Please try again.']);
+                }
+                $stored->storageUsageEvents()->delete();
+                $stored->shareLinks()->delete();
+                $stored->forceDelete();
+                $account->used_storage_bytes = $this->used($account);
+                $account->save();
+            });
+        }
+    }
+
+    public function deleteFolder(Folder $folder, Request $request): void
+    {
+        $access = app(LibraryAccess::class);
+        $access->authorizeOwner($folder, $request->user());
+        $access->ensureUnlocked($folder, $request);
+        abort_if($folder->system_key !== null, 422, 'Default folders cannot be deleted.');
+        $all = $request->user()->folders()->withTrashed()->orderBy('id')->get();
+        $request->attributes->set('library_folders', $all->keyBy('id')->all());
+        $pending = [$folder->id];
+        $ids = [];
+        for ($index = 0; $index < count($pending); $index++) {
+            $id = $pending[$index];
+            if (in_array($id, $ids, true)) {
+                continue;
+            }
+            $ids[] = $id;
+            foreach ($all->where('parent_id', $id) as $child) {
+                $access->ensureUnlocked($child, $request);
+                $pending[] = $child->id;
+            }
+        }
+        $files = $request->user()->files()->withTrashed()->whereIn('folder_id', $ids)->get();
+        $this->deleteFiles($request->user(), $files, $request);
+        DB::transaction(function () use ($request, $ids): void {
+            User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+            foreach (array_reverse($ids) as $id) {
+                $item = $request->user()->folders()->withTrashed()->whereKey($id)->firstOrFail();
+                $item->shareLinks()->delete();
+                $item->forceDelete();
+            }
+        });
+    }
+
     public function capacity(User $user): int
     {
         $additional = $user->storageSubscriptions()->where('status', 'active')

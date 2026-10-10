@@ -37,7 +37,7 @@ Route::middleware(['auth', 'verified'])->prefix('app')->name('app.')->group(func
     Route::get('/files/{file:uuid}/thumbnail', [FileController::class, 'thumbnail'])->name('files.thumbnail');
     Route::get('/files/{file:uuid}/download', [FileController::class, 'download'])->name('files.download');
     Route::patch('/files/{file:uuid}/star', [FileController::class, 'star'])->name('files.star');
-    Route::delete('/files/{file:uuid}', [FileController::class, 'destroy'])->name('files.destroy');
+    Route::delete('/files/{file:uuid}', [FileController::class, 'destroy'])->withTrashed()->name('files.destroy');
     Route::post('/files/{file:uuid}/copy', [FileActionController::class, 'transfer'])->name('files.copy');
     Route::patch('/files/{file:uuid}/move', [FileActionController::class, 'transfer'])->name('files.move');
     Route::patch('/files/{file:uuid}/restore', [FileController::class, 'restore'])->withTrashed()->name('files.restore');
@@ -46,6 +46,7 @@ Route::middleware(['auth', 'verified'])->prefix('app')->name('app.')->group(func
 
     Route::post('/folders', [FolderController::class, 'store'])->name('folders.store');
     Route::get('/folders/{folder:uuid}', [FolderController::class, 'show'])->name('folders.show');
+    Route::delete('/folders/{folder:uuid}', [FolderController::class, 'destroy'])->name('folders.destroy');
     Route::put('/folders/{folder:uuid}/password', [FolderPasswordController::class, 'update'])->middleware('throttle:10,1')->name('folders.password');
     Route::post('/folders/{folder:uuid}/unlock', [FolderPasswordController::class, 'unlock'])->middleware('throttle:10,1')->name('folders.unlock');
 });

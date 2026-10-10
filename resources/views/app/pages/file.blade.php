@@ -37,7 +37,7 @@
                 <dt>Uploaded</dt><dd>{{ $file->created_at->format('M j, Y, g:i a') }}</dd>
             </dl>
             @if ($file->user_id === auth()->id())
-                <form method="POST" action="{{ route('app.files.destroy', $file->uuid) }}" class="mb-3">@csrf @method('DELETE')<button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash me-1" aria-hidden="true"></i>Delete</button><span class="small text-secondary ms-2">Moves to Trash</span></form>
+                <form method="POST" action="{{ route('app.files.destroy', $file->uuid) }}" class="mb-3" onsubmit="return confirm('Permanently delete this file? This cannot be undone.')">@csrf @method('DELETE')<button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash me-1" aria-hidden="true"></i>Delete</button><span class="small text-secondary ms-2">Permanently removes the file and frees storage</span></form>
                 <form method="POST" action="{{ route('app.files.copy', $file->uuid) }}" class="file-transfer-form">
                     @csrf
                     <label for="copyDestination" class="form-label">Copy to folder</label>

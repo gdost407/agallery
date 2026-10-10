@@ -22,19 +22,11 @@ class FileActionController extends Controller
 
     public function destroySelected(BulkDeleteFilesRequest $request): RedirectResponse
     {
-        DB::transaction(function () use ($request): void {
-            User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
-            $files = $request->user()->files()->where('status', 'ready')->whereIn('uuid', $request->validated('files'))->orderBy('id')->lockForUpdate()->get();
-            abort_unless($files->count() === count($request->validated('files')), 404);
-            foreach ($files as $file) {
-                $this->access->ensureUnlocked($file, $request);
-            }
-            foreach ($files as $file) {
-                $file->delete();
-            }
-        });
+        $files = $request->user()->files()->where('status', 'ready')->whereIn('uuid', $request->validated('files'))->orderBy('id')->get();
+        abort_unless($files->count() === count($request->validated('files')), 404);
+        $this->storage->deleteFiles($request->user(), $files, $request);
 
-        return back()->with('status', 'Selected files moved to trash. They still count towards storage.');
+        return back()->with('status', 'Selected files permanently deleted. Storage space released.');
     }
 
     public function transfer(TransferFileRequest $request, File $file): RedirectResponse

@@ -75,6 +75,12 @@ class LibraryListing
             ? $user->folders()->where(fn ($folders) => $folders->whereNull('system_key')->orWhere('system_key', '!=', 'trash'))->orderBy('name')->get()->filter(fn (Folder $item): bool => $this->access->firstLocked($item, $request) === null)
             : collect();
 
+        $explorerFolders = $user->folders()->where(fn ($query) => $query->whereNull('system_key')->orWhere('system_key', '!=', 'trash'))
+            ->orderBy('name')->get()->reject(fn (Folder $item): bool => in_array($item->id, $hiddenFolderIds, true)
+                && (! $insidePrivateFolder || $this->access->firstLocked($item, $request) !== null));
+        $expandedFolderIds = $folder !== null
+            ? [...array_map(fn (Folder $item): int => $item->id, $this->access->ancestors($folder, $request)), $folder->id] : [];
+
         return view('app.pages.'.($folder !== null ? 'home' : $page), [
             'files' => $files, 'folders' => $folders, 'currentFolder' => $folder,
             'lockedFiles' => $lockedFiles,
@@ -82,6 +88,8 @@ class LibraryListing
             'analytics' => $analytics, 'folderUsage' => $folderUsage,
             'currentFolderUsage' => $folder !== null ? ($folderUsage[$folder->id] ?? null) : null,
             'selectionFolders' => $selectionFolders,
+            'explorerFolders' => $explorerFolders->groupBy(fn (Folder $item): int => $item->parent_id ?? 0),
+            'expandedFolderIds' => $expandedFolderIds,
         ]);
     }
 

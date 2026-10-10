@@ -1,4 +1,4 @@
-@props(['page' => 'home', 'files', 'folders', 'currentFolder' => null, 'lockedFiles' => [], 'lockedFolders' => [], 'folderUsage' => [], 'currentFolderUsage' => null, 'selectionFolders' => []])
+@props(['page' => 'home', 'files', 'folders', 'currentFolder' => null, 'lockedFiles' => [], 'lockedFolders' => [], 'folderUsage' => [], 'currentFolderUsage' => null, 'selectionFolders' => [], 'explorerFolders' => collect(), 'expandedFolderIds' => []])
 
 @php
     $headings = ['home' => 'My library', 'folders' => 'Folders', 'private' => 'Private folders', 'photos' => 'Photos', 'videos' => 'Videos', 'documents' => 'Documents', 'starred' => 'Starred', 'recent' => 'Recent', 'shared' => 'Shared with me', 'trash' => 'Trash'];
@@ -21,8 +21,20 @@
     </div>
     @if ($currentFolderUsage)<p class="folder-usage-summary"><i class="bi bi-folder" aria-hidden="true"></i><strong>{{ $currentFolderUsage['label'] }}</strong> · {{ $currentFolderUsage['count'] }} files including subfolders and Trash</p>@endif
     @if (!$currentFolder->system_key)
+    <form method="POST" action="{{ route('app.folders.destroy', $currentFolder->uuid) }}" class="mb-3" onsubmit="return confirm('Permanently delete this folder, all subfolders and their files? This cannot be undone.')">@csrf @method('DELETE')<button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash me-2" aria-hidden="true"></i>Delete folder permanently</button></form>
     <x-resource-password :action="route('app.folders.password', $currentFolder->uuid)" :protected="$currentFolder->password_hash !== null" />
     @endif
+@endif
+
+@if ($page === 'folders' || $currentFolder)
+<div class="folder-explorer">
+    <nav class="folder-explorer-sidebar" aria-label="Folder explorer">
+        <h2>Explorer</h2>
+        <a class="folder-tree-link {{ !$currentFolder ? 'active' : '' }}" href="{{ route('app.folders') }}"><i class="bi bi-house" aria-hidden="true"></i>All folders</a>
+        @include('app.components.folder-tree', ['parentId' => 0])
+        <a class="folder-tree-link" href="{{ route('app.private') }}"><i class="bi bi-lock" aria-hidden="true"></i>Private folders</a>
+    </nav>
+    <div class="folder-explorer-content">
 @endif
 
 @if ($folders->isNotEmpty())
@@ -39,6 +51,9 @@
                         <div class="text-break"><strong>{{ $folder->name }}</strong><span>{{ $folder->password_hash ? 'Password protected' : 'Folder' }}</span>@if(isset($folderUsage[$folder->id]))<span>{{ $folderUsage[$folder->id]['label'] }} · {{ $folderUsage[$folder->id]['count'] }} files including subfolders</span>@endif</div>
                         <i class="bi bi-arrow-up-right collection-arrow" aria-hidden="true"></i>
                     </a>
+                    @if (!$folder->system_key && !$folderLocked)
+                        <form method="POST" action="{{ route('app.folders.destroy', $folder->uuid) }}" class="mt-2" onsubmit="return confirm('Permanently delete this folder, all subfolders and their files? This cannot be undone.')">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger" type="submit" aria-label="Delete folder {{ $folder->name }}">Delete folder</button></form>
+                    @endif
                 </div>
             @endforeach
         </div>
@@ -53,7 +68,7 @@
     @if ($page !== 'trash' && $page !== 'shared')
         <div class="selection-toolbar mb-3" data-selection-toolbar hidden>
             <span data-selection-count role="status" aria-live="polite">0 selected</span>
-            <form id="selectedFilesDelete" method="POST" action="{{ route('app.files.selected') }}" class="selection-actions">
+            <form id="selectedFilesDelete" method="POST" action="{{ route('app.files.selected') }}" class="selection-actions" onsubmit="return event.submitter?.value !== 'delete' || confirm('Permanently delete the selected files? This cannot be undone.')">
                 @csrf
                 <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete" data-delete-selected data-selection-action disabled><i class="bi bi-trash me-1" aria-hidden="true"></i>Delete selected</button>
                 <button class="btn btn-outline-primary btn-sm" type="button" data-selection-action data-selection-transfer="copy" data-bs-toggle="modal" data-bs-target="#selectedTransferModal" disabled>Copy</button>
@@ -110,6 +125,9 @@
                     @if ($page === 'trash')
                         <form action="{{ route('app.files.restore', $file->uuid) }}" method="POST" class="mt-2">@csrf @method('PATCH')<button class="btn btn-sm btn-outline-primary" type="submit">Restore</button></form>
                     @endif
+                    @if ($file->user_id === auth()->id() && !$locked)
+                        <form method="POST" action="{{ route('app.files.destroy', $file->uuid) }}" class="mt-2" onsubmit="return confirm('Permanently delete this file? This cannot be undone.')">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger" type="submit" aria-label="Delete {{ $file->original_name }}">Delete permanently</button></form>
+                    @endif
                 </div>
             </article>
         @endforeach
@@ -117,4 +135,8 @@
     <div class="search-empty {{ $files->isEmpty() ? '' : 'd-none' }}" id="searchEmpty" role="status"><span><i class="bi bi-search" aria-hidden="true"></i></span><h3>No files found</h3><p>Upload a file or try another search.</p><button type="button" class="btn btn-outline-primary" id="resetSearch">Clear search</button></div>
     <div class="mt-4">{{ $files->links() }}</div>
 </section>
+@endif
+@if ($page === 'folders' || $currentFolder)
+    </div>
+</div>
 @endif

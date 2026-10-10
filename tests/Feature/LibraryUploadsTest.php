@@ -158,7 +158,7 @@ test('only current active subscriptions increase storage capacity', function ():
     $this->actingAs($user)->get(route('app.dashboard'))->assertSee('of 3 GB used');
 });
 
-test('starred trash and restore pages reflect real file state while trash retains storage usage', function (): void {
+test('permanent deletion removes starred files and releases storage', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user)->post(route('app.files.store'), ['files' => [UploadedFile::fake()->create('my-note.txt', 1, 'text/plain')]]);
     $file = $user->files()->sole();
@@ -166,11 +166,11 @@ test('starred trash and restore pages reflect real file state while trash retain
     $this->get(route('app.starred'))->assertSee('my-note.txt');
     $this->delete(route('app.files.destroy', $file->uuid))->assertRedirect();
     $this->get(route('app.starred'))->assertDontSee('my-note.txt');
-    $this->get(route('app.trash'))->assertSee('my-note.txt');
+    $this->get(route('app.trash'))->assertDontSee('my-note.txt');
     $this->get(route('app.files.download', $file->uuid))->assertNotFound();
-    expect(app(StorageManager::class)->used($user))->toBe($file->size_bytes);
-    $this->patch(route('app.files.restore', $file->uuid))->assertRedirect();
-    $this->get(route('app.dashboard'))->assertSee('my-note.txt');
+    expect(app(StorageManager::class)->used($user))->toBe(0);
+    $this->patch(route('app.files.restore', $file->uuid))->assertNotFound();
+    $this->get(route('app.dashboard'))->assertDontSee('my-note.txt');
 });
 
 test('another account cannot read edit or unlock private resources', function (): void {

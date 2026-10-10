@@ -11,7 +11,7 @@ beforeEach(function (): void {
     Storage::fake('local');
 });
 
-test('batch delete moves selected owned files to trash and preserves storage usage', function (): void {
+test('batch delete permanently removes selected files and releases storage', function (): void {
     $user = User::factory()->create();
     $files = File::factory()->for($user)->count(2)->create(['size_bytes' => 100]);
     $kept = File::factory()->for($user)->create(['size_bytes' => 100]);
@@ -19,11 +19,11 @@ test('batch delete moves selected owned files to trash and preserves storage usa
     $this->from(route('app.dashboard'))->delete(route('app.files.bulk-destroy'), ['files' => $files->pluck('uuid')->all()])
         ->assertRedirect(route('app.dashboard'))->assertSessionHasNoErrors();
     foreach ($files as $file) {
-        $this->assertSoftDeleted($file);
+        $this->assertModelMissing($file);
     }
     expect($kept->fresh()->trashed())->toBeFalse();
-    $this->get(route('app.trash'))->assertSee($files[0]->original_name)->assertSee($files[1]->original_name);
-    expect(app(StorageManager::class)->used($user))->toBe(300);
+    $this->get(route('app.trash'))->assertDontSee($files[0]->original_name)->assertDontSee($files[1]->original_name);
+    expect(app(StorageManager::class)->used($user))->toBe(100);
 });
 
 test('batch deletion rejects foreign duplicate or locked files without deleting any selected files', function (): void {
@@ -38,8 +38,8 @@ test('batch deletion rejects foreign duplicate or locked files without deleting 
     expect($owned->fresh()->trashed())->toBeFalse()->and($locked->fresh()->trashed())->toBeFalse();
     $this->post(route('app.folders.unlock', $folder->uuid), ['password' => 'folder-secret'])->assertRedirect();
     $this->delete(route('app.files.bulk-destroy'), ['files' => [$owned->uuid, $locked->uuid]])->assertRedirect();
-    $this->assertSoftDeleted($owned);
-    $this->assertSoftDeleted($locked);
+    $this->assertModelMissing($owned);
+    $this->assertModelMissing($locked);
 });
 
 test('copy creates an independent private file and increases counters and history', function (): void {

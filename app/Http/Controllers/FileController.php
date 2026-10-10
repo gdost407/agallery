@@ -6,8 +6,10 @@ use App\Http\FileThumbnail;
 use App\Http\FileViewer;
 use App\Http\LibraryAccess;
 use App\Http\Requests\UploadFilesRequest;
+use App\Http\StorageManager;
 use App\Http\UploadFiles;
 use App\Models\File;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -102,9 +104,9 @@ class FileController extends Controller
     {
         $this->access->authorizeOwner($file, $request->user());
         $this->access->ensureUnlocked($file, $request);
-        $file->delete();
+        app(StorageManager::class)->deleteFiles($request->user(), new Collection([$file]), $request);
 
-        return to_route('app.dashboard')->with('status', 'File moved to trash. It still counts towards storage.');
+        return to_route('app.dashboard')->with('status', 'File permanently deleted. Storage space released.');
     }
 
     public function restore(Request $request, File $file): RedirectResponse

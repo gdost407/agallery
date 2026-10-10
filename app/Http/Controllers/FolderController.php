@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\LibraryAccess;
 use App\Http\LibraryListing;
 use App\Http\Requests\StoreFolderRequest;
+use App\Http\StorageManager;
 use App\Models\Folder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,13 @@ use Illuminate\View\View;
 
 class FolderController extends Controller
 {
+    public function destroy(Request $request, Folder $folder, StorageManager $storage): RedirectResponse
+    {
+        $storage->deleteFolder($folder, $request);
+
+        return to_route('app.folders')->with('status', 'Folder and its contents permanently deleted. Storage space released.');
+    }
+
     public function store(StoreFolderRequest $request, LibraryAccess $access): RedirectResponse
     {
         $parent = $request->validated('parent_id') !== null ? Folder::findOrFail($request->validated('parent_id')) : null;
