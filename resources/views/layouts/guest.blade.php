@@ -20,7 +20,6 @@
         <header class="auth-header">
             <a href="{{ route('home') }}" aria-label="AGallery home"><img src="{{ asset('assets/AGallery-Logo.png') }}" alt="AGallery" width="150"></a>
             <a class="auth-back" href="{{ route('home') }}">&larr; Back to home</a>
-            <x-theme-toggle />
         </header>
         <main class="auth-shell">
             <aside class="auth-story" aria-label="About AGallery">

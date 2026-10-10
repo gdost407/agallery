@@ -9,7 +9,6 @@
                 <li class="nav-item"><a class="nav-link" href="#how-it-works">How it works</a></li>
             </ul>
             <div class="d-flex gap-2 py-2">
-                <x-theme-toggle />
                 @auth
                     <a class="btn btn-brand" href="{{ route('app.dashboard') }}">Open my library &rarr;</a>
                 @else

@@ -34,7 +34,7 @@ function browser(saved, dark = false, blocked = false, legacy = false, readyStat
         },
         addEventListener: (name, callback) => { events[name] = callback; },
     };
-    vm.runInNewContext(fs.readFileSync('public/theme.js', 'utf8'), { window, document });
+    vm.runInNewContext(fs.readFileSync('public/assets/app/js/theme.js', 'utf8'), { window, document });
     if (events.ready) events.ready();
     return { root, media, events, select, button, saved: () => saved, setSaved: value => { saved = value; } };
 }

@@ -16,7 +16,6 @@
         <div class="dropdown-menu dropdown-menu-end account-menu">
             <div class="px-3 py-2 d-flex align-items-center gap-2"><x-user-avatar :user="auth()->user()" /><div><strong class="d-block">{{ auth()->user()->name }}</strong><small class="text-secondary">{{ auth()->user()->email }}</small></div></div>
             <hr class="dropdown-divider">
-            <div class="px-3 py-2"><x-theme-toggle /></div>
             <a class="dropdown-item" href="{{ route('profile.edit') }}"><i class="bi bi-person me-2" aria-hidden="true"></i>Manage profile</a>
             <form method="POST" action="{{ route('logout') }}">@csrf<button class="dropdown-item text-danger" type="submit"><i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Sign out</button></form>
         </div>
