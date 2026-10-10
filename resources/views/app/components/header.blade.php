@@ -1,11 +1,12 @@
 <header class="gallery-header">
     <a class="mobile-header-brand" href="{{ route('app.dashboard') }}" aria-label="AGallery home"><img src="{{ asset('assets/AGallery-Logo-Golden.png') }}" alt="AGallery" width="120" height="40"></a>
     <button class="icon-button d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#libraryNavigation" aria-controls="libraryNavigation" aria-label="Open navigation"><i class="bi bi-list" aria-hidden="true"></i></button>
-    <form class="search-box" method="GET" action="{{ route('app.dashboard') }}" role="search">
+    <button class="navbar-search-toggle" type="button" data-search-toggle aria-label="Open search" aria-controls="navbarSearch" aria-expanded="false"><i class="bi bi-search" aria-hidden="true"></i></button>
+    <form id="navbarSearch" class="search-box navbar-search-panel" method="GET" action="{{ route('app.dashboard') }}" role="search" hidden>
         <label class="visually-hidden" for="librarySearch">Search your library</label>
         <input id="librarySearch" name="q" value="{{ is_string(request('q')) ? request('q') : '' }}" type="search" placeholder="Search your library" autocomplete="off">
         <button type="submit" class="header-search-submit" aria-label="Search library"><i class="bi bi-search" aria-hidden="true"></i></button>
-        <span class="search-hint d-none d-md-inline">Search library</span>
+        <button type="button" class="header-search-close" data-search-close aria-label="Close search"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
     </form>
     <div class="dropdown">
         <button class="account-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open account menu">

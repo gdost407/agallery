@@ -5,6 +5,23 @@
     const search = document.getElementById('librarySearch');
     const grid = document.getElementById('fileGrid');
     const files = Array.from(document.querySelectorAll('[data-file]'));
+    const searchToggle = document.querySelector('[data-search-toggle]');
+    const searchPanel = document.getElementById('navbarSearch');
+    if (searchToggle && searchPanel && search) {
+        function setSearchOpen(open) {
+            searchPanel.hidden = !open;
+            searchToggle.setAttribute('aria-expanded', String(open));
+            searchToggle.setAttribute('aria-label', open ? 'Close search' : 'Open search');
+            if (open) search.focus();
+            else searchToggle.focus();
+        }
+        searchToggle.addEventListener('click', () => setSearchOpen(searchPanel.hidden));
+        searchPanel.querySelector('[data-search-close]').addEventListener('click', () => setSearchOpen(false));
+        searchPanel.addEventListener('keydown', event => {
+            if (event.key === 'Escape') { event.preventDefault(); setSearchOpen(false); }
+        });
+        document.getElementById('resetSearch')?.addEventListener('click', () => setSearchOpen(true));
+    }
 
     function filterFiles() {
         const query = search.value.trim().toLocaleLowerCase();
