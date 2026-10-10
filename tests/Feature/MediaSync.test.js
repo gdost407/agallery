@@ -18,9 +18,10 @@ function element() {
         addEventListener(name, callback) { this.listeners[name] = callback; },
         setAttribute(name, value) { this.attributes[name] = value; } };
 }
-function media(name, bytes) {
+function media(name, bytes, modified = 1) {
     const buffer = new TextEncoder().encode(bytes);
-    return { kind: 'file', name, getFile: async () => ({ name, size: buffer.length, arrayBuffer: async () => buffer.slice().buffer }) };
+    const entry = { kind: 'file', name, reads: 0, getFile: async () => ({ name, size: buffer.length, lastModified: modified, arrayBuffer: async () => { entry.reads++; return buffer.slice().buffer; } }) };
+    return entry;
 }
 function directory(entries, permission = 'granted') {
     return { name: 'Camera', kind: 'directory', permissionRequests: 0,
@@ -28,20 +29,20 @@ function directory(entries, permission = 'granted') {
         async requestPermission() { this.permissionRequests++; return 'granted'; },
         async *values() { yield* entries; } };
 }
-function harness({ folder = null, supported = true, existing = [], failedWake = false, otherTab = false } = {}) {
-    const nodes = Object.fromEntries(['select', 'start', 'stop', 'forget', 'status', 'progress', 'bar', 'wake', 'refresh'].map(name => [name, element()]));
+function harness({ folder = null, supported = true, existing = [], failedWake = false, otherTab = false, savedStore = null } = {}) {
+    const nodes = Object.fromEntries(['select', 'start', 'stop', 'forget', 'status', 'progress', 'bar', 'wake', 'refresh', 'last'].map(name => [name, element()]));
     const panel = { dataset: { account: '7', statusUrl: '/status', uploadUrl: '/files', token: 'csrf' },
         querySelector(selector) { return nodes[selector.slice(11, -1)]; } };
     const document = { readyState: 'loading', visibilityState: 'visible', listeners: {},
         querySelector: () => panel, addEventListener(name, callback) { this.listeners[name] = callback; } };
-    const saved = new Map(folder ? [['media-folder:7', folder]] : []);
+    const saved = savedStore || new Map(folder ? [['media-folder:7', folder]] : []);
     const indexedDB = { open() {
         const request = {};
         setImmediate(() => {
             request.result = { close() {}, transaction() {
                 const transaction = { objectStore: () => ({
                     get: key => ({ result: saved.get(key) }),
-                    put: (value, key) => { saved.set(key, value); return {}; },
+                    put: (value, key) => { saved.set(key, key.startsWith('media-progress:') ? structuredClone(value) : value); return {}; },
                     delete: key => { saved.delete(key); return {}; },
                 }) };
                 setImmediate(() => transaction.oncomplete());
@@ -159,4 +160,70 @@ test('unsupported browsers and a busy tab do not scan or upload', async () => {
     await until(() => busy.nodes.status.textContent.includes('another tab'));
     assert.equal(busy.requests.length, 0);
     assert.equal(busy.locks.length, 0);
+});
+
+test('closing and reopening resumes pending files without reading or uploading completed photos again', async () => {
+    const first = media('first.jpg', 'first');
+    const second = media('second.mp4', 'second');
+    const folder = directory([first, second]);
+    const original = harness({ folder });
+    await until(() => original.requests.length === 1);
+    original.requests[0].finish();
+    await until(() => original.requests.length === 2);
+    original.nodes.stop.listeners.click();
+    await until(() => !original.nodes.select.disabled);
+    assert.ok(original.saved.get('media-progress:7').lastSyncedAt);
+    const reopened = harness({ folder, savedStore: original.saved });
+    await until(() => reopened.requests.length === 1);
+    assert.equal(reopened.requests[0].body.values['files[]'].name, 'second.mp4');
+    assert.equal(first.reads, 1);
+    assert.equal(second.reads, 1);
+    assert.equal(reopened.checks[0].checksums.length, 1);
+    reopened.requests[0].finish();
+    await until(() => !reopened.nodes.select.disabled);
+    const complete = harness({ folder, savedStore: original.saved });
+    await until(() => complete.nodes.status.textContent === 'Your media is already synced.');
+    assert.equal(complete.requests.length, 0);
+    assert.equal(complete.checks.length, 0);
+    assert.equal(first.reads, 1);
+    assert.equal(second.reads, 1);
+});
+
+test('new and changed files are checked while identical names in different subfolders remain independent', async () => {
+    const entries = [media('photo.jpg', 'old')];
+    const folder = directory(entries);
+    const original = harness({ folder });
+    await until(() => original.requests.length === 1);
+    original.requests[0].finish();
+    await until(() => !original.nodes.select.disabled);
+    const changed = media('photo.jpg', 'new', 2);
+    const nestedPhoto = media('photo.jpg', 'nested');
+    entries[0] = changed;
+    entries.push(directory([nestedPhoto]));
+    const resumed = harness({ folder, savedStore: original.saved });
+    await until(() => resumed.requests.length === 1);
+    resumed.requests[0].finish();
+    await until(() => resumed.requests.length === 2);
+    resumed.requests[1].finish();
+    await until(() => !resumed.nodes.select.disabled);
+    assert.equal(changed.reads, 1);
+    assert.equal(nestedPhoto.reads, 1);
+    assert.equal(resumed.saved.get('media-progress:7').records.length, 2);
+    await resumed.nodes.forget.listeners.click();
+    assert.equal(resumed.saved.has('media-progress:7'), false);
+});
+
+test('an uncertain upload is compared with the server on resume before being retried', async () => {
+    const file = media('photo.jpg', 'already uploaded');
+    const folder = directory([file]);
+    const original = harness({ folder });
+    await until(() => original.requests.length === 1);
+    original.nodes.stop.listeners.click();
+    await until(() => !original.nodes.select.disabled);
+    const hash = original.checks[0].checksums[0];
+    const resumed = harness({ folder, savedStore: original.saved, existing: [hash] });
+    await until(() => resumed.nodes.status.textContent === 'Your media is already synced.');
+    assert.equal(resumed.requests.length, 0);
+    assert.equal(file.reads, 1);
+    assert.equal(resumed.saved.get('media-progress:7').records[0][1].synced, true);
 });

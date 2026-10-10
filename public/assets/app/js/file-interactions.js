@@ -112,30 +112,26 @@
             viewer.classList.remove('details-open');
             viewer.querySelector('[data-bs-target="#fileDetailsPanel"]').setAttribute('aria-expanded', 'false');
         });
-        try {
-            const entry = JSON.parse(sessionStorage.getItem('gallery-viewer-transition') || 'null');
-            sessionStorage.removeItem('gallery-viewer-transition');
-            if (entry?.path === window.location.pathname && Date.now() - entry.time < 5000 && !reducedMotion()) {
-                stage.classList.add(entry.direction === 'next' ? 'enter-from-right' : 'enter-from-left');
-                stage.addEventListener('animationend', () => stage.classList.remove('enter-from-right', 'enter-from-left'), { once: true });
-            }
-        } catch {}
     }
-    const navigate = direction => {
+    const navigate = async direction => {
         const path = viewer.dataset[direction];
         if (!path || navigating) { resetDrag(); return; }
-        if (!immersive || reducedMotion()) { window.location.assign(path); return; }
+        if (!immersive) { window.location.assign(path); return; }
         navigating = true;
-        try { sessionStorage.setItem('gallery-viewer-transition', JSON.stringify({ direction, path: new URL(path, window.location.href).pathname, time: Date.now() })); } catch {}
-        stage.classList.remove('is-dragging');
-        stage.style.transform = direction === 'next' ? 'translateX(-100vw)' : 'translateX(100vw)';
-        window.setTimeout(() => window.location.assign(path), 220);
+        try {
+            await window.galleryMediaNavigate({ viewer, stage, details, direction, reducedMotion: reducedMotion() });
+        } finally {
+            navigating = false;
+            resetDrag();
+        }
     };
     if (immersive) {
-        viewer.querySelectorAll('[data-viewer-navigate]').forEach(link => link.addEventListener('click', event => {
+        viewer.addEventListener('click', event => {
+            const link = event.target.closest('[data-viewer-navigate]');
+            if (!link) return;
             event.preventDefault();
             navigate(link.dataset.viewerNavigate);
-        }));
+        });
         window.addEventListener('pageshow', () => { navigating = false; resetDrag(); });
     }
     viewer.addEventListener('touchstart', event => {

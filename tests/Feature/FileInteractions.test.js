@@ -146,9 +146,10 @@ function viewerHarness(immersive = false, reducedMotion = false) {
     let detailsShown = 0;
     let detailsHidden = 0;
     const timers = [];
+    const ajax = [];
     vm.runInNewContext(source, {
         document,
-        window: { location: { assign: path => redirects.push(path) }, setTimeout(callback) { timers.push(callback); }, addEventListener() {}, matchMedia: () => ({ matches: reducedMotion }) },
+        window: { galleryMediaNavigate: options => { ajax.push(options); return new Promise(() => {}); }, location: { assign: path => redirects.push(path) }, setTimeout(callback) { timers.push(callback); }, addEventListener() {}, matchMedia: () => ({ matches: reducedMotion }) },
         bootstrap: { Offcanvas: { getOrCreateInstance: () => ({ show() { detailsShown++; details.listeners['show.bs.offcanvas']?.(); }, hide() { detailsHidden++; details.listeners['hide.bs.offcanvas']?.(); } }) } },
     });
     const touch = (x, y, target = element()) => ({ target, touches: [{ clientX: x, clientY: y }], changedTouches: [{ clientX: x, clientY: y }], preventDefault() {} });
@@ -157,7 +158,7 @@ function viewerHarness(immersive = false, reducedMotion = false) {
         viewer.listeners.touchmove(touch(100 + x, 100 + y));
         viewer.listeners.touchend(touch(100 + x, 100 + y));
     };
-    return { viewer, document, stage, detailsButton, timers, redirects, touch, swipe, get detailsShown() { return detailsShown; }, get detailsHidden() { return detailsHidden; } };
+    return { viewer, document, stage, detailsButton, timers, redirects, ajax, touch, swipe, get detailsShown() { return detailsShown; }, get detailsHidden() { return detailsHidden; } };
 }
 
 test('immersive viewer follows the swipe before animating navigation and prevents duplicate navigation', () => {
@@ -166,12 +167,12 @@ test('immersive viewer follows the swipe before animating navigation and prevent
     h.viewer.listeners.touchmove(h.touch(10, 100));
     assert.equal(h.stage.style.transform, 'translateX(-90px)');
     h.viewer.listeners.touchend(h.touch(10, 100));
-    assert.equal(h.stage.style.transform, 'translateX(-100vw)');
+    assert.equal(h.ajax[0].direction, 'next');
     assert.deepEqual(h.redirects, []);
     h.swipe(-90, 0);
-    assert.equal(h.timers.length, 1);
-    h.timers[0]();
-    assert.deepEqual(h.redirects, ['/next']);
+    assert.equal(h.ajax.length, 1);
+    assert.equal(h.timers.length, 0);
+    assert.deepEqual(h.redirects, []);
 });
 
 test('immersive viewer splits for details and restores the full canvas when swiping down', () => {
@@ -195,7 +196,8 @@ test('immersive viewer restores incomplete swipes and respects reduced motion an
     assert.equal(h.timers.length, 0);
     const reduced = viewerHarness(true, true);
     reduced.swipe(-90, 0);
-    assert.deepEqual(reduced.redirects, ['/next']);
+    assert.deepEqual(reduced.redirects, []);
+    assert.equal(reduced.ajax[0].reducedMotion, true);
     assert.equal(reduced.timers.length, 0);
 });
 

@@ -80,7 +80,12 @@ class FileController extends Controller
         $headers = ['Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff'];
         $path = $thumbnails->path($file);
         if ($path !== null) {
-            return response()->file($path, [...$headers, 'Content-Type' => 'image/jpeg'])->setPrivate();
+            $response = response()->file($path, [...$headers, 'Content-Type' => 'image/jpeg'])
+                ->setPrivate()->setEtag(hash_file('sha256', $path));
+            $response->headers->set('Cache-Control', 'private, no-cache');
+            $response->isNotModified($request);
+
+            return $response;
         }
 
         return response()->view('app.components.file-thumbnail', ['file' => $file], 200,

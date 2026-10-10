@@ -121,7 +121,7 @@
                     <a href="{{ route('app.files.show', $file->uuid) }}" class="file-preview document-preview blue" aria-label="Open {{ $file->original_name }}">
                         @if (! $locked)
                             @if(in_array($file->mime_type, ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif']))
-                                <img src="{{ route('app.files.content', $file->uuid) }}" alt="" loading="lazy" decoding="async" width="480" height="320">
+                                <img src="{{ route('app.files.thumbnail', $file->uuid) }}" alt="" loading="lazy" decoding="async" width="160" height="160">
                             @elseif(in_array($file->mime_type, ['video/mp4', 'video/webm']))
                                 <video class="file-video-preview" src="{{ route('app.files.content', $file->uuid) }}#t=0.1" muted playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
                                 <span class="video-preview-play"><i class="bi bi-play-fill" aria-hidden="true"></i></span>

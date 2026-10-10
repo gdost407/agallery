@@ -11,25 +11,30 @@ beforeEach(function (): void {
     Storage::fake('local');
 });
 
-test('photo cards show the image directly and private resized thumbnails remain available', function (): void {
+test('photo cards load kilobyte thumbnails and cached responses still require authorization', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user)->post(route('app.photos.store'), [
         'files' => [UploadedFile::fake()->image('large.jpg', 2400, 1600)],
     ])->assertSessionHasNoErrors();
     $file = $user->files()->sole();
-    $this->get(route('app.photos'))->assertSee(route('app.files.content', $file->uuid), false);
+    $this->get(route('app.photos'))->assertSee(route('app.files.thumbnail', $file->uuid), false)
+        ->assertDontSee(route('app.files.content', $file->uuid), false);
     $response = $this->get(route('app.files.thumbnail', $file->uuid))
         ->assertSuccessful()->assertHeader('Content-Type', 'image/jpeg')
-        ->assertHeader('Cache-Control', 'no-store, private');
+        ->assertHeader('Cache-Control', 'no-cache, private');
     $path = $response->baseResponse->getFile()->getPathname();
     $dimensions = getimagesize($path);
-    expect($dimensions[0])->toBe(480)->and($dimensions[1])->toBe(320)
+    expect($dimensions[0])->toBeLessThanOrEqual(160)->and($dimensions[1])->toBeLessThanOrEqual(160)
+        ->and(filesize($path))->toBeLessThanOrEqual(1024)
         ->and(filesize($path))->toBeLessThan($file->size_bytes);
     $bytes = file_get_contents($path);
     $this->get(route('app.files.thumbnail', $file->uuid))->assertSuccessful();
     expect(file_get_contents($path))->toBe($bytes);
     Storage::disk('local')->assertCount('', 2, true);
     expect($user->fresh()->used_storage_bytes)->toBe($file->size_bytes);
+    $this->withHeader('If-None-Match', $response->headers->get('ETag'))
+        ->get(route('app.files.thumbnail', $file->uuid))->assertStatus(304);
+    $this->actingAs(User::factory()->create())->get(route('app.files.thumbnail', $file->uuid))->assertNotFound();
 });
 
 test('locked ancestors block cached thumbnails and private contents stay hidden from normal galleries', function (): void {
@@ -51,7 +56,7 @@ test('locked ancestors block cached thumbnails and private contents stay hidden 
     $this->get(route('app.files.thumbnail', $file->uuid))->assertStatus(423);
     $this->post(route('app.files.unlock', $file->uuid), ['password' => 'folder-secret'])->assertRedirect();
     $this->get(route('app.files.thumbnail', $file->uuid))->assertSuccessful();
-    $this->get(route('app.folders.show', $child->uuid))->assertSee(route('app.files.content', $file->uuid), false)
+    $this->get(route('app.folders.show', $child->uuid))->assertSee(route('app.files.thumbnail', $file->uuid), false)
         ->assertDontSee('locked-preview-placeholder', false);
     $this->get(route('app.photos'))->assertDontSee($file->original_name);
     $this->travel(31)->minutes();
@@ -107,4 +112,23 @@ test('invalid image files safely fall back to type thumbnails', function (): voi
     Storage::disk('local')->put($file->storage_key, 'invalid-image-data');
     $this->actingAs($file->user)->get(route('app.files.thumbnail', $file->uuid))
         ->assertSuccessful()->assertHeader('Content-Type', 'image/svg+xml');
+});
+
+test('detailed photos are compressed to the thumbnail byte budget without changing the original', function (): void {
+    $file = File::factory()->create(['category' => 'image', 'extension' => 'png', 'mime_type' => 'image/png']);
+    $image = imagecreatetruecolor(640, 480);
+    for ($y = 0; $y < 480; $y++) {
+        for ($x = 0; $x < 640; $x++) {
+            imagesetpixel($image, $x, $y, (($x * 73 + $y * 151) % 256) << 16 | (($x * 31 + $y * 97) % 256) << 8 | (($x * 157 + $y * 13) % 256));
+        }
+    }
+    ob_start();
+    imagepng($image);
+    $original = ob_get_clean();
+    imagedestroy($image);
+    Storage::disk('local')->put($file->storage_key, $original);
+    $response = $this->actingAs($file->user)->get(route('app.files.thumbnail', $file->uuid))
+        ->assertSuccessful()->assertHeader('Content-Type', 'image/jpeg');
+    expect(filesize($response->baseResponse->getFile()->getPathname()))->toBeLessThanOrEqual(1024)
+        ->and(Storage::disk('local')->get($file->storage_key))->toBe($original);
 });

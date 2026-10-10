@@ -9,9 +9,17 @@
         const status = node('status'), progress = node('progress'), bar = node('bar'), wakeNote = node('wake');
         let handle = null, running = false, cancelled = false, wake = null, requestingWake = false, xhr = null, controller = null;
         const accountKey = `media-folder:${panel.dataset.account}`;
+        const progressKey = `media-progress:${panel.dataset.account}`;
         const extensions = /\.(jpe?g|png|gif|webp|bmp|avif|heic|heif|mp4|mov|avi|mkv|webm|mpeg|mpg|m4v|3gp)$/i;
 
-        function savedFolder(mode, value) {
+        function showLastSync(value) {
+            const last = node('last');
+            if (!last) return;
+            last.hidden = !value;
+            last.textContent = value ? `Last completed upload: ${new Date(value).toLocaleString()}` : '';
+        }
+
+        function savedFolder(mode, value, key = accountKey) {
             return new Promise((resolve, reject) => {
                 const open = indexedDB.open('agallery-media-sync', 1);
                 open.onupgradeneeded = () => open.result.createObjectStore('folders');
@@ -21,7 +29,7 @@
                     const db = open.result;
                     const transaction = db.transaction('folders', mode === 'read' ? 'readonly' : 'readwrite');
                     const store = transaction.objectStore('folders');
-                    const request = mode === 'read' ? store.get(accountKey) : mode === 'forget' ? store.delete(accountKey) : store.put(value, accountKey);
+                    const request = mode === 'read' ? store.get(key) : mode === 'forget' ? store.delete(key) : store.put(value, key);
                     transaction.oncomplete = () => { db.close(); resolve(request.result); };
                     transaction.onabort = transaction.onerror = () => { db.close(); reject(new Error('Your browser could not save folder settings.')); };
                 };
@@ -73,13 +81,14 @@
             } finally { requestingWake = false; }
         }
 
-        async function scan(directory, files) {
+        async function scan(directory, files, prefix = '') {
             for await (const entry of directory.values()) {
                 checkCancelled();
-                if (entry.kind === 'directory') await scan(entry, files);
+                const path = prefix + entry.name;
+                if (entry.kind === 'directory') await scan(entry, files, path + '/');
                 else if (entry.kind === 'file' && extensions.test(entry.name)) {
                     const file = await entry.getFile();
-                    files.push(file);
+                    files.push({ file, path });
                     status.textContent = `Scanning ${handle.name}: ${files.length} media files found…`;
                 }
             }
@@ -137,38 +146,65 @@
         async function performSync() {
             checkCancelled();
             await acquireWake();
+            const saved = await savedFolder('read', undefined, progressKey);
+            const records = new Map(saved?.records || []);
+            let lastSyncedAt = saved?.lastSyncedAt || null;
+            showLastSync(lastSyncedAt);
+            const checkpoint = () => savedFolder('write', { records: Array.from(records), lastSyncedAt }, progressKey);
+            const markSynced = async hashes => {
+                for (const record of records.values()) {
+                    if (hashes.has(record.hash)) record.synced = true;
+                }
+                await checkpoint();
+            };
             const files = [];
-            update(0, `Scanning ${handle.name}…`);
+            update(0, `Looking for new or changed files in ${handle.name}…`);
             await scan(handle, files);
             const candidates = [], unique = new Set();
+            const completedHashes = new Set();
             let skipped = 0;
             for (let index = 0; index < files.length; index++) {
                 checkCancelled();
-                const file = files[index];
+                const { file, path } = files[index];
                 if (file.size > 512 * 1024 * 1024) { skipped++; continue; }
-                update(index / files.length * 100, `Checking ${index + 1} of ${files.length}: ${file.name}`);
-                const hash = await checksum(file);
+                const previous = records.get(path);
+                const unchanged = previous && previous.size === file.size && previous.modified === file.lastModified;
+                if (unchanged && previous.synced) {
+                    completedHashes.add(previous.hash);
+                    continue;
+                }
+                update(index / files.length * 100, `${unchanged ? 'Resuming' : 'Checking'} ${index + 1} of ${files.length}: ${file.name}`);
+                const hash = unchanged ? previous.hash : await checksum(file);
+                records.set(path, { size: file.size, modified: file.lastModified, hash, synced: false });
+                await checkpoint();
                 if (!unique.has(hash)) { unique.add(hash); candidates.push({ file, hash }); }
             }
-            const existing = new Set();
-            for (let index = 0; index < candidates.length; index += 100) {
+            const unchecked = candidates.filter(item => !completedHashes.has(item.hash));
+            const existing = new Set(completedHashes);
+            for (let index = 0; index < unchecked.length; index += 100) {
                 checkCancelled();
                 status.textContent = 'Comparing media with your library…';
-                (await synced(candidates.slice(index, index + 100).map(item => item.hash))).forEach(hash => existing.add(hash));
+                (await synced(unchecked.slice(index, index + 100).map(item => item.hash))).forEach(hash => existing.add(hash));
+                await markSynced(existing);
             }
+            await markSynced(existing);
             const pending = candidates.filter(item => !existing.has(item.hash));
             const totalBytes = pending.reduce((total, item) => total + item.file.size, 0);
             let completedBytes = 0;
             update(0, `${pending.length} new files to sync.`);
             for (let index = 0; index < pending.length; index++) {
                 checkCancelled();
-                const { file } = pending[index];
+                const { file, hash } = pending[index];
                 const label = `Syncing ${index + 1} of ${pending.length}: ${file.name}`;
                 update(totalBytes ? completedBytes / totalBytes * 100 : index / pending.length * 100, label);
                 await upload(file, fraction => update(totalBytes ? (completedBytes + file.size * fraction) / totalBytes * 100 : 0, label));
+                lastSyncedAt = new Date().toISOString();
+                await markSynced(new Set([hash]));
+                showLastSync(lastSyncedAt);
                 completedBytes += file.size;
                 node('refresh').hidden = false;
             }
+            await checkpoint();
             update(100, pending.length ? `Sync complete: ${pending.length} files saved. Refresh the library to see them.` : 'Your media is already synced.');
             if (skipped) status.textContent += ` ${skipped} files over 512 MB were skipped.`;
         }
@@ -208,6 +244,9 @@
         select.addEventListener('click', async () => {
             try {
                 const selected = await window.showDirectoryPicker({ mode: 'read', id: 'agallery-media' });
+                const sameFolder = handle && (handle === selected || await handle.isSameEntry?.(selected));
+                if (!sameFolder) await savedFolder('forget', undefined, progressKey);
+                if (!sameFolder) showLastSync(null);
                 await savedFolder('write', selected);
                 handle = selected;
                 controls();
@@ -217,6 +256,8 @@
         forget.addEventListener('click', async () => {
             try {
                 await savedFolder('forget');
+                await savedFolder('forget', undefined, progressKey);
+                showLastSync(null);
                 handle = null;
                 progress.hidden = true;
                 node('refresh').hidden = true;
@@ -232,6 +273,8 @@
         (async () => {
             try {
                 handle = await savedFolder('read');
+                const saved = await savedFolder('read', undefined, progressKey);
+                showLastSync(saved?.lastSyncedAt);
                 controls();
                 if (!handle) { status.textContent = 'Choose your media folder once to enable sync on app load.'; return; }
                 if (await handle.queryPermission({ mode: 'read' }) === 'granted') await run();

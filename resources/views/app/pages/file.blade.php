@@ -7,8 +7,9 @@
     <div class="page-heading"><div><p class="eyebrow">{{ strtoupper($file->extension) }} FILE</p><h1 class="text-break">{{ $file->original_name }}</h1><p class="page-description">{{ \Illuminate\Support\Number::fileSize($file->size_bytes) }}</p></div></div>
     <a href="{{ $file->folder_id && $file->user_id === auth()->id() ? route('app.folders.show', $file->folder->uuid) : route('app.dashboard') }}" class="d-inline-block mb-3">Back to library</a>
     @endunless
-    <div class="{{ $immersive ? 'immersive-viewer' : 'card border-0 p-3 mb-4 text-center' }} {{ str_starts_with($file->mime_type, 'video/') ? 'immersive-video' : '' }} media-viewer" data-media-viewer @if($immersive) data-immersive @endif data-previous="{{ $previousFile ? route('app.files.show', $previousFile->uuid) : '' }}" data-next="{{ $nextFile ? route('app.files.show', $nextFile->uuid) : '' }}">
+    <div class="{{ $immersive ? 'immersive-viewer' : 'card border-0 p-3 mb-4 text-center' }} {{ str_starts_with($file->mime_type, 'video/') ? 'immersive-video' : '' }} media-viewer" data-media-viewer data-current="{{ route('app.files.show', $file->uuid) }}" @if($immersive) data-immersive @endif data-previous="{{ $previousFile ? route('app.files.show', $previousFile->uuid) : '' }}" data-next="{{ $nextFile ? route('app.files.show', $nextFile->uuid) : '' }}">
         @if($immersive)
+            <p class="viewer-load-status" data-viewer-status role="status" hidden></p>
             <div class="viewer-overlay-top">
                 <a class="viewer-icon-button" href="{{ $file->folder_id && $file->user_id === auth()->id() ? route('app.folders.show', $file->folder->uuid) : route('app.dashboard') }}" aria-label="Close viewer"><i class="bi bi-arrow-left" aria-hidden="true"></i></a>
             </div>

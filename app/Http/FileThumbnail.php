@@ -10,7 +10,7 @@ class FileThumbnail
     public function path(File $file): ?string
     {
         $disk = Storage::disk('local');
-        $key = 'thumbnails/'.$file->uuid.'/preview-v1.jpg';
+        $key = 'thumbnails/'.$file->uuid.'/preview-v2.jpg';
         if ($disk->exists($key)) {
             return $disk->path($key);
         }
@@ -52,25 +52,29 @@ class FileThumbnail
                     }
                 }
             }
-            $scale = min(1, 480 / max(imagesx($source), imagesy($source)));
+            $scale = min(1, 160 / max(imagesx($source), imagesy($source)));
             $width = max(1, (int) round(imagesx($source) * $scale));
             $height = max(1, (int) round(imagesy($source) * $scale));
-            $thumbnail = imagecreatetruecolor($width, $height);
-            try {
-                imagefill($thumbnail, 0, 0, imagecolorallocate($thumbnail, 245, 247, 250));
-                imagecopyresampled($thumbnail, $source, 0, 0, 0, 0, $width, $height, imagesx($source), imagesy($source));
-                ob_start();
+            do {
+                $thumbnail = imagecreatetruecolor($width, $height);
                 try {
-                    imagejpeg($thumbnail, null, 75);
-                    $bytes = ob_get_contents();
+                    imagefill($thumbnail, 0, 0, imagecolorallocate($thumbnail, 245, 247, 250));
+                    imagecopyresampled($thumbnail, $source, 0, 0, 0, 0, $width, $height, imagesx($source), imagesy($source));
+                    ob_start();
+                    try {
+                        imagejpeg($thumbnail, null, 25);
+                        $bytes = ob_get_contents();
+                    } finally {
+                        ob_end_clean();
+                    }
                 } finally {
-                    ob_end_clean();
+                    imagedestroy($thumbnail);
                 }
-                if (! $disk->put($key, $bytes)) {
-                    return null;
-                }
-            } finally {
-                imagedestroy($thumbnail);
+                $width = max(1, (int) floor($width * 0.75));
+                $height = max(1, (int) floor($height * 0.75));
+            } while (strlen($bytes) > 1024 && ($width > 1 || $height > 1));
+            if (! $disk->put($key, $bytes)) {
+                return null;
             }
         } finally {
             imagedestroy($source);

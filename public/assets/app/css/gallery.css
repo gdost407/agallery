@@ -151,6 +151,8 @@ a{text-decoration:none}button,input,select{font:inherit}button,a,input,select{to
 @keyframes viewer-enter-left { from { transform: translateX(-100vw); } to { transform: translateX(0); } }
 @media (prefers-reduced-motion: reduce) { .immersive-viewer, .immersive-viewer .viewer-stage { transition: none; }.viewer-stage.enter-from-right, .viewer-stage.enter-from-left { animation: none; } }
 .media-viewer img { user-select: none; -webkit-touch-callout: none; }
+.viewer-stage-incoming { position: absolute; inset: 0; pointer-events: none; }
+.viewer-load-status { position: absolute; top: max(76px, env(safe-area-inset-top)); left: 12px; right: 12px; z-index: 3; margin: 0; padding: 10px; border-radius: 8px; color: #fff; background: #222d; text-align: center; font-size: 12px; pointer-events: none; }
 .media-viewer video { max-height: 70vh; }
 .file-details-panel { height: min(75vh, 640px) !important; border-radius: 18px 18px 0 0; }
 .file-details-panel .offcanvas-body { width: 100%; max-width: 760px; margin: 0 auto; }
