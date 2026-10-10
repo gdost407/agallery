@@ -1,5 +1,7 @@
 <link rel="manifest" href="{{ url('/manifest.webmanifest') }}">
 <meta name="theme-color" content="#3267e3">
+<script src="{{ url('/theme.js') }}?v={{ filemtime(public_path('theme.js')) }}"></script>
+<link rel="stylesheet" href="{{ url('/theme.css') }}?v={{ filemtime(public_path('theme.css')) }}">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="AGallery">

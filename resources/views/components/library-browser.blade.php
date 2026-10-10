@@ -6,12 +6,18 @@
     $heading = $currentFolder?->name ?? $headings[$page];
 @endphp
 
-<div class="page-heading">
-    <div><p class="eyebrow">YOUR PERSONAL SPACE</p><h1>{{ $heading }}</h1><p class="page-description">{{ $page === 'trash' ? 'Trashed files still count towards your storage.' : 'Your uploaded files, organised in one place.' }}</p></div>
-    <div class="d-flex gap-2 flex-wrap">
-        <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#createFolderModal"><i class="bi bi-folder-plus me-2" aria-hidden="true"></i>New folder</button>
-        <button class="btn btn-primary heading-upload" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasUploadDoc" aria-controls="offcanvasUploadDoc"><i class="bi bi-cloud-arrow-up me-2" aria-hidden="true"></i>Add files</button>
-    </div>
+<div class="page-heading library-page-heading">
+    <h1>{{ $heading }}</h1>
+    @if ($page !== 'private')<span class="library-total">{{ $files->total() }} files</span>@endif
+</div>
+@if ($page === 'trash')<p class="small text-secondary mb-2">Trashed files still count towards your storage.</p>@endif
+
+<div class="dropdown dropup library-add-menu">
+    <button class="library-add-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Add files or create folder"><i class="bi bi-plus-lg" aria-hidden="true"></i></button>
+    <ul class="dropdown-menu dropdown-menu-end">
+        <li><button class="dropdown-item" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasUploadDoc" aria-controls="offcanvasUploadDoc"><i class="bi bi-cloud-arrow-up me-2" aria-hidden="true"></i>Upload files</button></li>
+        <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#createFolderModal"><i class="bi bi-folder-plus me-2" aria-hidden="true"></i>Create folder</button></li>
+    </ul>
 </div>
 
 @if ($currentFolder)
@@ -89,10 +95,12 @@
             <div class="modal-body"><label class="form-label" for="selectedDestination">Destination folder</label><select class="form-select" id="selectedDestination" name="folder_id" form="selectedFilesDelete"><option value="">Default folder (by file type)</option>@foreach ($selectionFolders as $destination)<option value="{{ $destination->id }}">{{ $destination->name }}</option>@endforeach</select><p class="small text-secondary mt-3 mb-0">Protected folders must be unlocked first. Copying uses additional storage.</p></div>
             <div class="modal-footer"><button type="submit" class="btn btn-primary" name="action" value="copy" form="selectedFilesDelete" data-confirm-transfer>Copy selected files</button></div>
         </div></div></div>
-        <button class="btn btn-sm btn-outline-secondary mb-3" type="button" data-start-selection>Select files</button>
     @endif
-    <div class="section-heading file-section-heading"><div class="d-flex align-items-center gap-2"><h2 id="filesTitle">{{ $filesHeading }}</h2><span class="count-badge" id="fileCount" aria-live="polite">{{ $files->count() }}</span></div><span>{{ $files->total() }} files</span></div>
-    <div class="library-toolbar">
+    <h2 id="filesTitle" class="{{ $page === 'home' && ! $currentFolder ? 'compact-files-heading' : 'visually-hidden' }}">{{ $filesHeading }} <span class="count-badge" id="fileCount" aria-live="polite">{{ $files->count() }}</span></h2>
+    <div class="library-toolbar compact-library-toolbar">
+        @if ($page !== 'trash' && $page !== 'shared')
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-start-selection>Select files</button>
+        @endif
         <div class="d-flex align-items-center gap-2 toolbar-options">
             <label class="visually-hidden" for="fileSort">Sort files on this page</label><select id="fileSort" class="form-select sort-select"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="name">Name A–Z</option></select>
             <div class="view-toggle" role="group" aria-label="File view"><button class="active" type="button" data-view="grid" aria-label="Grid view" aria-pressed="true"><i class="bi bi-grid" aria-hidden="true"></i></button><button type="button" data-view="list" aria-label="List view" aria-pressed="false"><i class="bi bi-list-ul" aria-hidden="true"></i></button></div>
