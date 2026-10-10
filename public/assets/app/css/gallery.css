@@ -68,6 +68,63 @@ a{text-decoration:none}button,input,select{font:inherit}button,a,input,select{to
 .selection-toolbar[hidden] { display: none; }
 .selection-toolbar form { margin-left: auto; }
 .media-viewer { min-height: 250px; }
+.mobile-navigation { display: none; }
+.mobile-header-brand { display: none; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.profile-avatar { width: 80px; height: 80px; font-size: 28px; }
+.header-search-submit { border: 0; background: transparent; color: #3267e3; padding: 4px 8px; min-width: 36px; min-height: 36px; border-radius: 8px; }
+.header-search-submit:focus-visible { outline: 2px solid #3267e3; }
+@media (max-width: 991.98px) {
+    .gallery-app { -webkit-tap-highlight-color: transparent; }
+    .gallery-workspace { min-height: 100dvh; padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+    .gallery-header { height: auto; min-height: 112px; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; background: #fff; gap: 10px; flex-wrap: wrap; }
+    .mobile-header-brand { display: flex; align-items: center; order: 0; }
+    .mobile-header-brand img { width: 120px; height: 40px; object-fit: contain; }
+    .gallery-header > .dropdown { order: 1; }
+    .gallery-header .search-box { order: 2; flex: 0 0 100%; max-width: none; padding: 4px 10px; }
+    .gallery-header .search-box input { font-size: 14px; min-height: 36px; }
+    .gallery-header > .icon-button { display: none; }
+    .gallery-main { padding: 18px 14px; }
+    .workspace-footer { display: none; }
+    .mobile-navigation { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); position: fixed; inset: auto 0 0; z-index: 1030; background: #fff; border-top: 1px solid var(--gallery-line); padding: 8px max(8px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); box-shadow: 0 -4px 24px #20334c08; }
+    .mobile-navigation-item { min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 0; background: transparent; color: #78869a; font-size: 11px; text-decoration: none; border-radius: 12px; }
+    .mobile-navigation-item i { font-size: 22px; line-height: 1; }
+    .mobile-navigation-item.active { color: #3267e3; background: #edf3ff; font-weight: 600; }
+    .mobile-navigation-item:focus-visible { outline: 2px solid #3267e3; outline-offset: -2px; }
+    .page-heading { flex-wrap: wrap; gap: 12px; }
+    .heading-upload { margin-top: 0; }
+    .file-name { font-size: 12px; }
+    .file-meta { font-size: 10px; }
+    .media-sync-panel .btn { min-height: 40px; }
+    .gallery-app .pwa-install { bottom: calc(86px + env(safe-area-inset-bottom)); }
+}
+.gallery-immersive { background: #000; overflow: hidden; }
+.gallery-immersive .gallery-workspace { margin: 0; padding: 0; }
+.gallery-immersive .gallery-main { margin: 0; padding: 0; max-width: none; }
+.gallery-immersive .gallery-main > .alert { position: fixed; top: 64px; left: 12px; right: 12px; z-index: 1050; }
+.immersive-viewer { position: fixed; inset: 0 0 auto; width: 100%; height: 100vh; height: 100dvh; min-height: 0; background: #000; overflow: hidden; transition: height .3s ease; }
+.immersive-viewer.details-open { height: 50vh; height: 50dvh; }
+.immersive-viewer .viewer-stage { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; transition: transform .22s ease-out; touch-action: pinch-zoom; }
+.immersive-viewer .viewer-stage.is-dragging { transition: none; }
+.immersive-viewer img.preview-image, .immersive-viewer video { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; border-radius: 0; }
+.viewer-overlay-top, .viewer-overlay-bottom { position: absolute; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; z-index: 2; padding: 14px max(14px, env(safe-area-inset-right)) 14px max(14px, env(safe-area-inset-left)); pointer-events: none; }
+.viewer-overlay-top { top: 0; padding-top: max(14px, env(safe-area-inset-top)); background: linear-gradient(#0008, transparent); }
+.viewer-overlay-bottom { bottom: 0; padding-bottom: max(16px, env(safe-area-inset-bottom)); background: linear-gradient(transparent, #0008); }
+.immersive-video .viewer-overlay-bottom { bottom: 64px; }
+.viewer-icon-button, .viewer-details-button { pointer-events: auto; color: #fff; border: 1px solid #ffffff25; background: #2229; backdrop-filter: blur(8px); text-decoration: none; }
+.viewer-icon-button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; font-size: 20px; }
+.viewer-icon-button:hover { color: #fff; background: #444b; }
+.viewer-details-button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 44px; border: 0; background: transparent; font-size: 11px; padding: 4px 12px; }
+.viewer-details-button i { font-size: 18px; }
+.gallery-immersive .file-details-panel { height: 50vh !important; height: 50dvh !important; padding-bottom: env(safe-area-inset-bottom); border-radius: 18px 18px 0 0; }
+.gallery-immersive .file-details-panel .offcanvas-header { flex-shrink: 0; border-bottom: 1px solid var(--gallery-line); }
+.gallery-immersive .file-details-panel .offcanvas-body { overscroll-behavior: contain; padding-bottom: 24px; }
+.immersive-viewer.details-open .viewer-details-button { visibility: hidden; }
+.viewer-stage.enter-from-right { animation: viewer-enter-right .25s ease-out; }
+.viewer-stage.enter-from-left { animation: viewer-enter-left .25s ease-out; }
+@keyframes viewer-enter-right { from { transform: translateX(100vw); } to { transform: translateX(0); } }
+@keyframes viewer-enter-left { from { transform: translateX(-100vw); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .immersive-viewer, .immersive-viewer .viewer-stage { transition: none; }.viewer-stage.enter-from-right, .viewer-stage.enter-from-left { animation: none; } }
 .media-viewer img { user-select: none; -webkit-touch-callout: none; }
 .media-viewer video { max-height: 70vh; }
 .file-details-panel { height: min(75vh, 640px) !important; border-radius: 18px 18px 0 0; }

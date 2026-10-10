@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\FileThumbnail;
 use App\Http\FileViewer;
 use App\Http\LibraryAccess;
+use App\Http\Requests\MediaSyncRequest;
 use App\Http\Requests\UploadFilesRequest;
 use App\Http\StorageManager;
 use App\Http\UploadFiles;
@@ -25,6 +26,15 @@ class FileController extends Controller
     public function store(UploadFilesRequest $request, UploadFiles $uploads): RedirectResponse|JsonResponse
     {
         return $uploads->handle($request);
+    }
+
+    public function syncStatus(MediaSyncRequest $request): JsonResponse
+    {
+        $checksums = $request->user()->files()->withTrashed()->where('status', 'ready')
+            ->whereIn('checksum_sha256', $request->validated('checksums'))
+            ->distinct()->pluck('checksum_sha256');
+
+        return response()->json(['synced' => $checksums])->header('Cache-Control', 'private, no-store');
     }
 
     public function show(Request $request, File $file, FileViewer $viewer): View

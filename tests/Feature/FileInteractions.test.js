@@ -9,7 +9,9 @@ function element() {
     const classes = new Set();
     return {
         listeners: {}, dataset: {}, hidden: false, checked: false, disabled: false,
-        classList: { toggle(name, enabled) { if (enabled) classes.add(name); else classes.delete(name); }, contains: name => classes.has(name) },
+        style: {}, attributes: {},
+        setAttribute(name, value) { this.attributes[name] = value; },
+        classList: { toggle(name, enabled) { if (enabled) classes.add(name); else classes.delete(name); }, contains: name => classes.has(name), add(...names) { names.forEach(name => classes.add(name)); }, remove(...names) { names.forEach(name => classes.delete(name)); } },
         addEventListener(name, callback) { this.listeners[name] = callback; },
         querySelector() { return null; },
         querySelectorAll() { return []; },
@@ -125,18 +127,25 @@ test('desktop selection and cancellation clear checkboxes and disable deletion',
     assert.equal(h.remove.disabled, true);
 });
 
-function viewerHarness() {
+function viewerHarness(immersive = false, reducedMotion = false) {
     const viewer = element();
     viewer.dataset = { previous: '/previous', next: '/next' };
+    viewer.hasAttribute = () => immersive;
+    const stage = element();
+    const details = element();
+    const detailsButton = element();
+    viewer.querySelector = selector => selector === '[data-viewer-stage]' ? stage : detailsButton;
     const document = element();
     document.querySelector = selector => selector === '[data-media-viewer]' ? viewer : null;
-    document.getElementById = () => element();
+    document.getElementById = () => details;
     const redirects = [];
     let detailsShown = 0;
+    let detailsHidden = 0;
+    const timers = [];
     vm.runInNewContext(source, {
         document,
-        window: { location: { assign: path => redirects.push(path) } },
-        bootstrap: { Offcanvas: { getOrCreateInstance: () => ({ show() { detailsShown++; } }) } },
+        window: { location: { assign: path => redirects.push(path) }, setTimeout(callback) { timers.push(callback); }, addEventListener() {}, matchMedia: () => ({ matches: reducedMotion }) },
+        bootstrap: { Offcanvas: { getOrCreateInstance: () => ({ show() { detailsShown++; details.listeners['show.bs.offcanvas']?.(); }, hide() { detailsHidden++; details.listeners['hide.bs.offcanvas']?.(); } }) } },
     });
     const touch = (x, y, target = element()) => ({ target, touches: [{ clientX: x, clientY: y }], changedTouches: [{ clientX: x, clientY: y }], preventDefault() {} });
     const swipe = (x, y) => {
@@ -144,8 +153,47 @@ function viewerHarness() {
         viewer.listeners.touchmove(touch(100 + x, 100 + y));
         viewer.listeners.touchend(touch(100 + x, 100 + y));
     };
-    return { viewer, document, redirects, touch, swipe, get detailsShown() { return detailsShown; } };
+    return { viewer, document, stage, detailsButton, timers, redirects, touch, swipe, get detailsShown() { return detailsShown; }, get detailsHidden() { return detailsHidden; } };
 }
+
+test('immersive viewer follows the swipe before animating navigation and prevents duplicate navigation', () => {
+    const h = viewerHarness(true);
+    h.viewer.listeners.touchstart(h.touch(100, 100));
+    h.viewer.listeners.touchmove(h.touch(10, 100));
+    assert.equal(h.stage.style.transform, 'translateX(-90px)');
+    h.viewer.listeners.touchend(h.touch(10, 100));
+    assert.equal(h.stage.style.transform, 'translateX(-100vw)');
+    assert.deepEqual(h.redirects, []);
+    h.swipe(-90, 0);
+    assert.equal(h.timers.length, 1);
+    h.timers[0]();
+    assert.deepEqual(h.redirects, ['/next']);
+});
+
+test('immersive viewer splits for details and restores the full canvas when swiping down', () => {
+    const h = viewerHarness(true);
+    h.swipe(0, -90);
+    assert.equal(h.viewer.classList.contains('details-open'), true);
+    assert.equal(h.detailsButton.attributes['aria-expanded'], 'true');
+    h.swipe(0, 90);
+    assert.equal(h.viewer.classList.contains('details-open'), false);
+    assert.equal(h.detailsButton.attributes['aria-expanded'], 'false');
+    assert.equal(h.detailsHidden, 1);
+});
+
+test('immersive viewer restores incomplete swipes and respects reduced motion and navigation boundaries', () => {
+    const h = viewerHarness(true);
+    h.swipe(30, 0);
+    assert.equal(h.stage.style.transform, '');
+    h.viewer.dataset.next = '';
+    h.swipe(-90, 0);
+    assert.equal(h.stage.style.transform, '');
+    assert.equal(h.timers.length, 0);
+    const reduced = viewerHarness(true, true);
+    reduced.swipe(-90, 0);
+    assert.deepEqual(reduced.redirects, ['/next']);
+    assert.equal(reduced.timers.length, 0);
+});
 
 test('left and right swipes navigate while upward swipes open details', () => {
     const h = viewerHarness();

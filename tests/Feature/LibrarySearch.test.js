@@ -40,3 +40,8 @@ test('library search works with no file type filter buttons and clear search res
     assert.equal(h.cards[1].hidden, false);
     assert.equal(h.nodes.fileCount.textContent, 2);
 });
+
+test('viewer pages without header upload controls or sidebar do not cause JavaScript errors', () => {
+    const document = { getElementById: () => null, querySelector: () => null, querySelectorAll: () => [] };
+    assert.doesNotThrow(() => vm.runInNewContext(source, { document }));
+});

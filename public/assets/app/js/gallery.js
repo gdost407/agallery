@@ -18,7 +18,7 @@
         document.getElementById('searchEmpty').classList.toggle('d-none', visible !== 0);
     }
 
-    if (library) {
+    if (library && search) {
         search.addEventListener('input', filterFiles);
         document.getElementById('resetSearch').addEventListener('click', () => {
             search.value = '';
@@ -63,22 +63,24 @@
             container.appendChild(row);
         });
     }
-    input.addEventListener('change', () => showSelectedFiles(input.files));
-    ['dragover', 'dragenter'].forEach(type => dropzone.addEventListener(type, event => {
-        event.preventDefault();
-        dropzone.classList.add('dragging');
-    }));
-    ['dragleave', 'drop'].forEach(type => dropzone.addEventListener(type, event => {
-        event.preventDefault();
-        dropzone.classList.remove('dragging');
-    }));
-    dropzone.addEventListener('drop', event => {
-        input.files = event.dataTransfer.files;
-        showSelectedFiles(input.files);
-    });
+    if (input && dropzone) {
+        input.addEventListener('change', () => showSelectedFiles(input.files));
+        ['dragover', 'dragenter'].forEach(type => dropzone.addEventListener(type, event => {
+            event.preventDefault();
+            dropzone.classList.add('dragging');
+        }));
+        ['dragleave', 'drop'].forEach(type => dropzone.addEventListener(type, event => {
+            event.preventDefault();
+            dropzone.classList.remove('dragging');
+        }));
+        dropzone.addEventListener('drop', event => {
+            input.files = event.dataTransfer.files;
+            showSelectedFiles(input.files);
+        });
+    }
     const navigation = document.getElementById('libraryNavigation');
     document.querySelectorAll('[data-open-on-load]').forEach(modal => bootstrap.Modal.getOrCreateInstance(modal).show());
-    navigation.addEventListener('show.bs.offcanvas', () => {
+    navigation?.addEventListener('show.bs.offcanvas', () => {
         navigation.querySelector('.sidebar-brand').scrollIntoView({ block: 'start' });
     });
     document.querySelectorAll('[data-bs-target="#offcanvasUploadDoc"]').forEach(button => button.addEventListener('click', () => {

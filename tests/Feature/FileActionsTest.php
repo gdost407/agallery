@@ -11,6 +11,27 @@ beforeEach(function (): void {
     Storage::fake('local');
 });
 
+test('photo viewer fills the app canvas and excludes library navigation and sync controls', function (): void {
+    $user = User::factory()->create();
+    $file = File::factory()->for($user)->create(['mime_type' => 'image/jpeg', 'category' => 'image']);
+    $this->actingAs($user)->get(route('app.files.show', $file->uuid))->assertSuccessful()
+        ->assertSee('gallery-immersive', false)->assertSee('data-immersive', false)
+        ->assertSee('data-bs-backdrop="false"', false)->assertSee('Swipe up for details')
+        ->assertSee('aria-label="Close viewer"', false)->assertSee('fileDetailsPanel', false)
+        ->assertDontSee('class="gallery-header"', false)->assertDontSee('class="workspace-footer"', false)
+        ->assertDontSee('aria-label="Mobile navigation"', false)->assertDontSee('data-media-sync', false);
+});
+
+test('library pages have mobile navigation and document viewers retain their normal layout', function (): void {
+    $user = User::factory()->create();
+    $file = File::factory()->for($user)->create(['mime_type' => 'application/pdf', 'category' => 'document']);
+    $this->actingAs($user)->get(route('app.photos'))->assertSuccessful()
+        ->assertSee('aria-label="Mobile navigation"', false)->assertSee('mobile-navigation-item active', false);
+    $this->get(route('app.files.show', $file->uuid))->assertSuccessful()
+        ->assertSee('class="gallery-header"', false)->assertSee('aria-label="Mobile navigation"', false)
+        ->assertDontSee('data-immersive', false)->assertSee('iframe', false);
+});
+
 test('batch delete permanently removes selected files and releases storage', function (): void {
     $user = User::factory()->create();
     $files = File::factory()->for($user)->count(2)->create(['size_bytes' => 100]);

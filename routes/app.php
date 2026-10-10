@@ -29,6 +29,7 @@ Route::middleware(['auth', 'verified'])->prefix('app')->name('app.')->group(func
     Route::get('/folders', [LibraryController::class, 'folders'])->name('folders');
 
     Route::post('/files', [FileController::class, 'store'])->name('files.store');
+    Route::post('/media-sync/status', [FileController::class, 'syncStatus'])->name('media-sync.status');
     Route::post('/files/selected', SelectionController::class)->name('files.selected');
     Route::delete('/shares/{link}', [SharedFileController::class, 'revoke'])->name('shares.revoke');
     Route::delete('/files', [FileActionController::class, 'destroySelected'])->name('files.bulk-destroy');

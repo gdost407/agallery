@@ -21,7 +21,7 @@ class UploadFiles
             $this->access->ensureUnlocked($folder, $request);
         }
         try {
-            $this->storage->upload($request->user(), $request->file('files'), $folder);
+            $this->storage->upload($request->user(), $request->file('files'), $folder, $request->boolean('sync'));
         } catch (ValidationException $exception) {
             throw $exception;
         } catch (Throwable $exception) {
@@ -38,7 +38,10 @@ class UploadFiles
         if ($request->expectsJson()) {
             $request->session()->flash('status', 'Files uploaded.');
 
-            return response()->json(['redirect' => $folder !== null ? route('app.folders.show', $folder->uuid) : route($route)]);
+            return response()->json([
+                'redirect' => $folder !== null ? route('app.folders.show', $folder->uuid) : route($route),
+                'storage' => $this->storage->summary($request->user()),
+            ]);
         }
 
         return $folder !== null

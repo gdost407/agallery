@@ -127,12 +127,24 @@ class StorageManager
     }
 
     /** @param list<UploadedFile> $uploads */
-    public function upload(User $user, array $uploads, ?Folder $folder): void
+    public function upload(User $user, array $uploads, ?Folder $folder, bool $sync = false): void
     {
         $paths = [];
         try {
-            DB::transaction(function () use ($user, $uploads, $folder, &$paths): void {
+            DB::transaction(function () use ($user, $uploads, $folder, $sync, &$paths): void {
                 $account = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+                if ($sync) {
+                    $checksums = [];
+                    $uploads = array_values(array_filter($uploads, function (UploadedFile $upload) use ($account, &$checksums): bool {
+                        $checksum = hash_file('sha256', $upload->getRealPath());
+                        if (isset($checksums[$checksum]) || $account->files()->withTrashed()->where('status', 'ready')->where('checksum_sha256', $checksum)->exists()) {
+                            return false;
+                        }
+                        $checksums[$checksum] = true;
+
+                        return true;
+                    }));
+                }
                 $used = $this->used($account);
                 $incoming = array_sum(array_map(fn (UploadedFile $upload): int => $upload->getSize(), $uploads));
                 if ($incoming > max(0, $this->capacity($account) - $used - $account->reserved_storage_bytes)) {

@@ -30,11 +30,15 @@ class UploadFilesRequest extends FormRequest
         } elseif ($this->routeIs('app.documents.store')) {
             $fileRules[] = 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,rtf,odt,ods,odp';
         }
+        if ($this->boolean('sync')) {
+            $fileRules[] = 'mimes:jpg,jpeg,png,gif,webp,bmp,avif,heic,heif,mp4,mov,avi,mkv,webm,mpeg,mpg,m4v,3gp';
+        }
 
         return [
             'files' => ['required', 'array', 'min:1', 'max:20'],
             'files.*' => $fileRules,
             'folder_id' => ['nullable', 'integer', Rule::exists('folders', 'id')->where('user_id', $this->user()->id)->whereNull('deleted_at')],
+            'sync' => ['sometimes', 'boolean'],
             'password' => ['prohibited'],
             'password_confirmation' => ['prohibited'],
         ];
