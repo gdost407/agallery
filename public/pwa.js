@@ -27,7 +27,7 @@
     }
 
     window.addEventListener('beforeinstallprompt', event => {
-        if (!banner || !button || installed()) return;
+        if (!banner || !button || installed() || dismissed) return;
         event.preventDefault();
         deferredPrompt = event;
         button.hidden = false;

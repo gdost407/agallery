@@ -11,6 +11,7 @@ test('public home and login pages expose installation metadata', function (strin
         ->assertSee('rel="manifest"', false)
         ->assertSee(url('/manifest.webmanifest'))
         ->assertSee('apple-touch-icon')
+        ->assertSee('<meta name="mobile-web-app-capable" content="yes">', false)
         ->assertSee('id="pwaInstall"', false)
         ->assertSee(url('/service-worker.js'));
 })->with(['home', 'login']);
