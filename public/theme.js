@@ -34,7 +34,7 @@
     }
 
     apply();
-    document.addEventListener('DOMContentLoaded', () => {
+    function initializeControls() {
         apply();
         document.querySelectorAll('[data-theme-toggle]').forEach(button => {
             button.addEventListener('click', () => choose(root.dataset.theme === 'dark' ? 'light' : 'dark'));
@@ -42,8 +42,19 @@
         document.querySelectorAll('[data-theme-preference]').forEach(select => {
             select.addEventListener('change', () => choose(select.value));
         });
-    });
-    media.addEventListener('change', () => { if (preference === 'system') apply(); });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeControls, { once: true });
+    } else {
+        initializeControls();
+    }
+    const onSystemChange = () => { if (preference === 'system') apply(); };
+    if (typeof media.addEventListener === 'function') {
+        media.addEventListener('change', onSystemChange);
+    } else if (typeof media.addListener === 'function') {
+        media.addListener(onSystemChange);
+    }
+    window.addEventListener('pageshow', apply);
     window.addEventListener('storage', event => {
         if (event.key === key || event.key === null) {
             try { preference = validPreference(window.localStorage.getItem(key)); } catch { preference = 'system'; }

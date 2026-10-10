@@ -44,6 +44,7 @@
             <span class="storage-preview">Includes files in trash</span>
         </div>
         <a class="sidebar-profile" href="{{ route('profile.edit') }}"><i class="bi bi-gear" aria-hidden="true"></i>Settings &amp; profile</a>
+        <div class="d-lg-none mt-2"><x-theme-toggle /></div>
     </div>
 </aside>
 

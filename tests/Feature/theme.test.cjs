@@ -3,10 +3,14 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-function browser(saved, dark = false, blocked = false) {
+function browser(saved, dark = false, blocked = false, legacy = false, readyState = 'loading') {
     const events = {};
     const root = { dataset: {}, style: {}, classList: { toggle() {} } };
     const media = { matches: dark, addEventListener: (name, callback) => { events.system = callback; } };
+    if (legacy) {
+        delete media.addEventListener;
+        media.addListener = callback => { events.system = callback; };
+    }
     const select = { value: '', addEventListener: (name, callback) => { events.select = callback; } };
     const label = {};
     const icon = {};
@@ -16,6 +20,7 @@ function browser(saved, dark = false, blocked = false) {
         addEventListener: (name, callback) => { events.click = callback; },
     };
     const document = {
+        readyState,
         documentElement: root,
         querySelector: () => null,
         querySelectorAll: selector => selector.includes('toggle') ? [button] : [select],
@@ -30,7 +35,7 @@ function browser(saved, dark = false, blocked = false) {
         addEventListener: (name, callback) => { events[name] = callback; },
     };
     vm.runInNewContext(fs.readFileSync('public/theme.js', 'utf8'), { window, document });
-    events.ready();
+    if (events.ready) events.ready();
     return { root, media, events, select, button, saved: () => saved, setSaved: value => { saved = value; } };
 }
 
@@ -74,4 +79,22 @@ test('updates when another tab changes or clears the preference', () => {
     app.setSaved(null);
     app.events.storage({ key: null });
     assert.equal(app.select.value, 'system');
+});
+
+test('older mobile browsers can switch theme and follow device changes', () => {
+    const app = browser(null, false, false, true);
+    app.media.matches = true;
+    app.events.system();
+    assert.equal(app.root.dataset.theme, 'dark');
+    app.events.click();
+    assert.equal(app.root.dataset.theme, 'light');
+});
+
+test('initializes after page load and reapplies theme on PWA resume', () => {
+    const app = browser('dark', false, false, false, 'complete');
+    app.events.click();
+    assert.equal(app.root.dataset.theme, 'light');
+    app.root.dataset.theme = 'dark';
+    app.events.pageshow();
+    assert.equal(app.root.dataset.theme, 'light');
 });
