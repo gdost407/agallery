@@ -9,6 +9,7 @@
         const count = toolbar.querySelector('[data-selection-count]');
         const remove = toolbar.querySelector('[data-delete-selected]');
         const actions = Array.from(toolbar.querySelectorAll('[data-selection-action]'));
+        const actionMenu = toolbar.querySelector('[data-selection-menu]');
         document.querySelectorAll('[data-selection-transfer]').forEach(button => button.addEventListener('click', () => {
             const copying = button.dataset.selectionTransfer === 'copy';
             const confirm = document.querySelector('[data-confirm-transfer]');
@@ -38,6 +39,7 @@
             boxes.forEach(box => { box.checked = false; });
             suppressedCard = null;
             cancelHold();
+            if (actionMenu) actionMenu.open = false;
             refresh();
         });
         boxes.forEach(box => box.addEventListener('change', () => { selecting = true; refresh(); }));
@@ -45,7 +47,7 @@
             const box = card.querySelector('[data-file-select]');
             if (!box) return;
             card.addEventListener('pointerdown', event => {
-                if (!event.isPrimary || event.button !== 0 || event.target.closest('input, button, form, label')) return;
+                if (!event.isPrimary || event.button !== 0 || event.target.closest('input, button, form, label, details')) return;
                 cancelHold();
                 suppressedCard = null;
                 hold = { x: event.clientX, y: event.clientY, timer: setTimeout(() => {
@@ -54,6 +56,10 @@
                     suppressedCard = card;
                     hold = null;
                     refresh();
+                    if (actionMenu) {
+                        actionMenu.open = true;
+                        actionMenu.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+                    }
                 }, 450) };
             });
             card.addEventListener('pointermove', event => {
@@ -67,7 +73,7 @@
                     suppressedCard = null;
                     return;
                 }
-                if (event.target.closest('input, label')) return;
+                if (event.target.closest('input, label, details')) return;
                 if (!selecting) return;
                 event.preventDefault();
                 box.checked = !box.checked;

@@ -24,9 +24,6 @@
             @if ($errors->any())
                 <div class="alert alert-danger" role="alert"><ul class="mb-0">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
             @endif
-            @unless(View::hasSection('immersive-viewer'))
-                @include('app.components.media-sync')
-            @endunless
             @yield('content')
         </main>
         @unless(View::hasSection('immersive-viewer'))

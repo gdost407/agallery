@@ -26,6 +26,7 @@ function selectionHarness() {
     const library = element();
     const toolbar = element();
     const count = element();
+    const actionMenu = element();
     const remove = element();
     const cancel = element();
     const start = element();
@@ -43,7 +44,7 @@ function selectionHarness() {
         return card;
     });
     library.querySelectorAll = selector => selector === '[data-file]' ? cards : boxes;
-    toolbar.querySelector = selector => ({ '[data-selection-count]': count, '[data-delete-selected]': remove, '[data-cancel-selection]': cancel }[selector]);
+    toolbar.querySelector = selector => ({ '[data-selection-count]': count, '[data-delete-selected]': remove, '[data-cancel-selection]': cancel, '[data-selection-menu]': actionMenu }[selector]);
     toolbar.querySelectorAll = () => actions;
     const document = element();
     document.querySelector = selector => ({ '[data-library]': library, '[data-selection-toolbar]': toolbar, '[data-start-selection]': start, '[data-confirm-transfer]': confirm }[selector] || null);
@@ -60,7 +61,7 @@ function selectionHarness() {
         card.listeners.click({ target: element(), preventDefault() { prevented = true; } });
         return prevented;
     };
-    return { library, toolbar, count, remove, cancel, start, boxes, cards, document, point, click, timers, actions, copy, move, confirm,
+    return { library, toolbar, actionMenu, count, remove, cancel, start, boxes, cards, document, point, click, timers, actions, copy, move, confirm,
         fireTimers() { for (const callback of timers.values()) callback(); timers.clear(); },
     };
 }
@@ -89,12 +90,15 @@ test('long press reveals checkboxes and delete action without opening the presse
     assert.equal(h.toolbar.hidden, false);
     assert.equal(h.count.textContent, '1 selected');
     assert.equal(h.remove.disabled, false);
+    assert.equal(h.actionMenu.open, true);
     assert.equal(h.click(h.cards[0]), true);
     assert.equal(h.boxes[0].checked, true);
     h.click(h.cards[1]);
     assert.equal(h.count.textContent, '2 selected');
     h.click(h.cards[0]);
     assert.equal(h.count.textContent, '1 selected');
+    h.cancel.click();
+    assert.equal(h.actionMenu.open, false);
 });
 
 test('short taps and scrolling never activate selection', () => {

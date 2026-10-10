@@ -11,14 +11,13 @@ beforeEach(function (): void {
     Storage::fake('local');
 });
 
-test('photo cards use private resized thumbnails and reuse generated previews', function (): void {
+test('photo cards show the image directly and private resized thumbnails remain available', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user)->post(route('app.photos.store'), [
         'files' => [UploadedFile::fake()->image('large.jpg', 2400, 1600)],
     ])->assertSessionHasNoErrors();
     $file = $user->files()->sole();
-    $this->get(route('app.photos'))->assertSee(route('app.files.thumbnail', $file->uuid), false)
-        ->assertDontSee(route('app.files.content', $file->uuid), false);
+    $this->get(route('app.photos'))->assertSee(route('app.files.content', $file->uuid), false);
     $response = $this->get(route('app.files.thumbnail', $file->uuid))
         ->assertSuccessful()->assertHeader('Content-Type', 'image/jpeg')
         ->assertHeader('Cache-Control', 'no-store, private');
@@ -52,7 +51,7 @@ test('locked ancestors block cached thumbnails and private contents stay hidden 
     $this->get(route('app.files.thumbnail', $file->uuid))->assertStatus(423);
     $this->post(route('app.files.unlock', $file->uuid), ['password' => 'folder-secret'])->assertRedirect();
     $this->get(route('app.files.thumbnail', $file->uuid))->assertSuccessful();
-    $this->get(route('app.folders.show', $child->uuid))->assertSee(route('app.files.thumbnail', $file->uuid), false)
+    $this->get(route('app.folders.show', $child->uuid))->assertSee(route('app.files.content', $file->uuid), false)
         ->assertDontSee('locked-preview-placeholder', false);
     $this->get(route('app.photos'))->assertDontSee($file->original_name);
     $this->travel(31)->minutes();

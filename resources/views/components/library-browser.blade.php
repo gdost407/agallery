@@ -21,8 +21,10 @@
     </div>
     @if ($currentFolderUsage)<p class="folder-usage-summary"><i class="bi bi-folder" aria-hidden="true"></i><strong>{{ $currentFolderUsage['label'] }}</strong> · {{ $currentFolderUsage['count'] }} files including subfolders and Trash</p>@endif
     @if (!$currentFolder->system_key)
+    <details class="item-actions mb-3"><summary><i class="bi bi-three-dots" aria-hidden="true"></i>Folder actions</summary><div class="item-actions-content">
     <form method="POST" action="{{ route('app.folders.destroy', $currentFolder->uuid) }}" class="mb-3" onsubmit="return confirm('Permanently delete this folder, all subfolders and their files? This cannot be undone.')">@csrf @method('DELETE')<button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash me-2" aria-hidden="true"></i>Delete folder permanently</button></form>
     <x-resource-password :action="route('app.folders.password', $currentFolder->uuid)" :protected="$currentFolder->password_hash !== null" />
+    </div></details>
     @endif
 @endif
 
@@ -52,7 +54,9 @@
                         <i class="bi bi-arrow-up-right collection-arrow" aria-hidden="true"></i>
                     </a>
                     @if (!$folder->system_key && !$folderLocked)
+                        <details class="item-actions mt-2"><summary aria-label="Actions for folder {{ $folder->name }}"><i class="bi bi-three-dots" aria-hidden="true"></i>Actions</summary><div class="item-actions-content">
                         <form method="POST" action="{{ route('app.folders.destroy', $folder->uuid) }}" class="mt-2" onsubmit="return confirm('Permanently delete this folder, all subfolders and their files? This cannot be undone.')">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger" type="submit" aria-label="Delete folder {{ $folder->name }}">Delete folder</button></form>
+                        </div></details>
                     @endif
                 </div>
             @endforeach
@@ -68,6 +72,7 @@
     @if ($page !== 'trash' && $page !== 'shared')
         <div class="selection-toolbar mb-3" data-selection-toolbar hidden>
             <span data-selection-count role="status" aria-live="polite">0 selected</span>
+            <details class="item-actions" data-selection-menu><summary><i class="bi bi-three-dots" aria-hidden="true"></i>Selected file actions</summary><div class="item-actions-content">
             <form id="selectedFilesDelete" method="POST" action="{{ route('app.files.selected') }}" class="selection-actions" onsubmit="return event.submitter?.value !== 'delete' || confirm('Permanently delete the selected files? This cannot be undone.')">
                 @csrf
                 <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete" data-delete-selected data-selection-action disabled><i class="bi bi-trash me-1" aria-hidden="true"></i>Delete selected</button>
@@ -76,6 +81,7 @@
                 <button class="btn btn-outline-primary btn-sm" type="submit" name="action" value="share" data-selection-action disabled>Share</button>
                 <button class="btn btn-outline-primary btn-sm" type="submit" name="action" value="download" data-selection-action disabled>Download</button>
             </form>
+            </div></details>
             <button class="btn btn-outline-secondary btn-sm" type="button" data-cancel-selection>Cancel</button>
         </div>
         <div class="modal fade" id="selectedTransferModal" tabindex="-1" aria-labelledby="selectedTransferTitle" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
@@ -97,15 +103,23 @@
             @php
                 $type = match ($file->category) { 'image' => 'photos', 'video' => 'videos', 'document' => 'documents', default => 'other' };
                 $locked = $lockedFiles[$file->id] ?? false;
+                $mediaCard = in_array($file->category, ['image', 'video'], true);
             @endphp
-            <article class="file-card" data-file data-name="{{ $file->original_name }}" data-type="{{ $type }}" data-date="{{ $file->created_at->toIso8601String() }}">
+            <article class="file-card {{ $mediaCard ? 'media-thumbnail-card' : '' }}" data-file data-name="{{ $file->original_name }}" data-type="{{ $type }}" data-date="{{ $file->created_at->toIso8601String() }}">
                 @if ($page !== 'trash' && $page !== 'shared' && $file->user_id === auth()->id() && ! $locked)
                     <label class="file-select"><input type="checkbox" name="files[]" value="{{ $file->uuid }}" form="selectedFilesDelete" data-file-select aria-label="Select {{ $file->original_name }}"></label>
                 @endif
                 @if ($page !== 'trash')
                     <a href="{{ route('app.files.show', $file->uuid) }}" class="file-preview document-preview blue" aria-label="Open {{ $file->original_name }}">
                         @if (! $locked)
+                            @if(in_array($file->mime_type, ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif']))
+                                <img src="{{ route('app.files.content', $file->uuid) }}" alt="" loading="lazy" decoding="async" width="480" height="320">
+                            @elseif(in_array($file->mime_type, ['video/mp4', 'video/webm']))
+                                <video class="file-video-preview" src="{{ route('app.files.content', $file->uuid) }}#t=0.1" muted playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+                                <span class="video-preview-play"><i class="bi bi-play-fill" aria-hidden="true"></i></span>
+                            @else
                             <img src="{{ route('app.files.thumbnail', $file->uuid) }}" alt="" loading="lazy" decoding="async" width="480" height="320">
+                            @endif
                         @else
                             <div class="document-sheet locked-preview-placeholder" aria-hidden="true"><span>{{ strtoupper($file->extension) }}</span><i class="bi bi-{{ $type === 'videos' ? 'play-btn' : ($type === 'photos' ? 'image' : 'file-earmark-text') }}"></i></div>
                             <span class="protected-preview-overlay"><span class="protected-preview-icons"><i class="bi bi-lock-fill" aria-hidden="true"></i><i class="bi bi-link-45deg" aria-hidden="true"></i></span><span>Password protected</span><small>Enter password to open</small></span>
@@ -117,23 +131,31 @@
                 @endif
                 <div class="file-info">
                     <div class="file-title-row">
-                        @if ($page === 'trash')<span class="file-name">{{ $file->original_name }}</span>@else<a class="file-name" href="{{ route('app.files.show', $file->uuid) }}" title="{{ $file->original_name }}">{{ $file->original_name }}</a>@endif
+                        @if ($page === 'trash')<span class="file-name {{ $mediaCard ? 'file-name-badge' : '' }}" title="{{ $file->original_name }}">{{ $file->original_name }}</span>@else<a class="file-name {{ $mediaCard ? 'file-name-badge' : '' }}" href="{{ route('app.files.show', $file->uuid) }}" title="{{ $file->original_name }}">{{ $file->original_name }}</a>@endif
                         @if ($file->starred_at)<i class="bi bi-star-fill file-star" aria-label="Starred"></i>@endif
                         @if ($locked)<i class="bi bi-lock" aria-label="Password protected"></i>@endif
                     </div>
                     <div class="file-meta"><span>{{ \Illuminate\Support\Number::fileSize($file->size_bytes) }}</span><span class="meta-dot">·</span><time datetime="{{ $file->created_at->toDateString() }}">{{ $file->created_at->format('M j, Y') }}</time></div>
+                    @if (!$mediaCard || $page === 'trash')
+                    <details class="item-actions mt-2"><summary aria-label="Actions for {{ $file->original_name }}"><i class="bi bi-three-dots" aria-hidden="true"></i>Actions</summary><div class="item-actions-content">
+                    @if ($page !== 'trash')
+                        <a class="btn btn-sm btn-outline-primary" href="{{ route('app.files.show', $file->uuid) }}">Open &amp; details</a>
+                        @if (!$locked)<a class="btn btn-sm btn-outline-primary" href="{{ route('app.files.download', $file->uuid) }}">Download</a>@endif
+                    @endif
                     @if ($page === 'trash')
                         <form action="{{ route('app.files.restore', $file->uuid) }}" method="POST" class="mt-2">@csrf @method('PATCH')<button class="btn btn-sm btn-outline-primary" type="submit">Restore</button></form>
                     @endif
                     @if ($file->user_id === auth()->id() && !$locked)
                         <form method="POST" action="{{ route('app.files.destroy', $file->uuid) }}" class="mt-2" onsubmit="return confirm('Permanently delete this file? This cannot be undone.')">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger" type="submit" aria-label="Delete {{ $file->original_name }}">Delete permanently</button></form>
                     @endif
+                    </div></details>
+                    @endif
                 </div>
             </article>
         @endforeach
     </div>
     <div class="search-empty {{ $files->isEmpty() ? '' : 'd-none' }}" id="searchEmpty" role="status"><span><i class="bi bi-search" aria-hidden="true"></i></span><h3>No files found</h3><p>Upload a file or try another search.</p><button type="button" class="btn btn-outline-primary" id="resetSearch">Clear search</button></div>
-    <div class="mt-4">{{ $files->links() }}</div>
+    <div class="mt-4">@if($page === 'home' && !$currentFolder && !request()->filled('q'))<a class="btn btn-outline-primary" href="{{ route('app.recent') }}">View all uploads</a>@else{{ $files->links() }}@endif</div>
 </section>
 @endif
 @if ($page === 'folders' || $currentFolder)

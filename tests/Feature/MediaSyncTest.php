@@ -64,6 +64,7 @@ test('manual uploads still allow duplicate content and the app renders account s
     $this->actingAs($user)->postJson(route('app.files.store'), ['files' => [$photo]])->assertSuccessful();
     $this->postJson(route('app.files.store'), ['files' => [UploadedFile::fake()->createWithContent('two.jpg', $bytes)]])->assertSuccessful();
     $this->assertDatabaseCount('files', 2);
-    $this->get(route('app.dashboard'))->assertSuccessful()->assertSee('data-media-sync', false)
+    $this->get(route('app.dashboard'))->assertSuccessful()->assertDontSee('data-media-sync', false);
+    $this->get(route('profile.edit'))->assertSuccessful()->assertSee('data-media-sync', false)
         ->assertSee('data-account="'.$user->id.'"', false)->assertSee('media-sync.js', false);
 });

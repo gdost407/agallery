@@ -1,8 +1,8 @@
 FROM php:8.2-apache
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git unzip libonig-dev libzip-dev \
-    && docker-php-ext-install pdo_mysql mbstring bcmath zip \
+    && apt-get install -y --no-install-recommends git unzip libonig-dev libzip-dev libicu-dev \
+    && docker-php-ext-install pdo_mysql mbstring bcmath zip intl \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 

@@ -6,6 +6,7 @@ use App\Models\File;
 use App\Models\Folder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
 
 class LibraryListing
@@ -45,7 +46,13 @@ class LibraryListing
         if ($request->filled('q')) {
             $query->where('original_name', 'like', '%'.mb_substr($request->string('q')->toString(), 0, 255).'%');
         }
-        $files = $query->latest()->orderByDesc('id')->paginate(48)->withQueryString();
+        $query->latest()->orderByDesc('id');
+        if ($page === 'home' && $folder === null && ! $request->filled('q')) {
+            $recentFiles = $query->limit(10)->get();
+            $files = new LengthAwarePaginator($recentFiles, $recentFiles->count(), 10, 1, ['path' => $request->url()]);
+        } else {
+            $files = $query->paginate(48)->withQueryString();
+        }
         $folders = in_array($page, ['home', 'folders'], true)
             ? $user->folders()->where('parent_id', $folder?->id)->orderBy('name')->get()
             : collect();
